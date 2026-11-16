@@ -1,0 +1,274 @@
+<title>Light Up a Comet</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Interactive companion to the paper 'Forecasting comet light curves from sublimation physics': energy share of CO, CO2 and water ice, light curves, fits and forecasts.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: instrument bench, as in "Grow a Dwarf Galaxy" - control column left; light curve, readout strip and the ice physics right; two backtest panels below; stacks on phones */
+:root{
+  --bg:#eef1f5; --panel:#f8f9fb; --ink:#18202c; --mute:#5a6578; --rule:#cfd6e0;
+  --accent:#2f4fb3; --obs:#c2410c; --ghost:#9aa6b8; --good:#2e7d4f; --warn:#a36a00;
+  --co:#7a3fb0; --co2:#2f4fb3; --h2o:#08808a;
+  --display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Source Serif 4",Georgia,serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10151d; --panel:#171e29; --ink:#e3e8f0; --mute:#97a3b6; --rule:#2c3646;
+  --accent:#8ea8ff; --obs:#ff8a4c; --ghost:#5d6a7e; --good:#5fc48a; --warn:#e0a23a;
+  --co:#c49bff; --co2:#8ea8ff; --h2o:#4fd0d6; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10151d; --panel:#171e29; --ink:#e3e8f0; --mute:#97a3b6; --rule:#2c3646;
+  --accent:#8ea8ff; --obs:#ff8a4c; --ghost:#5d6a7e; --good:#5fc48a; --warn:#e0a23a;
+  --co:#c49bff; --co2:#8ea8ff; --h2o:#4fd0d6; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+header h1{font-family:var(--display);font-weight:600;font-size:clamp(28px,4vw,40px);letter-spacing:.01em;margin:0;text-wrap:balance}
+header p{color:var(--mute);margin:.4rem 0 0;max-width:72ch}
+header .eq{font-family:var(--mono);font-size:13px;color:var(--ink);max-width:none;overflow-x:auto}
+.links{display:flex;flex-wrap:wrap;gap:6px 18px;margin:.7rem 0 0;font-family:var(--display);font-size:14px;letter-spacing:.02em}
+.links a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent}
+.links a:hover,.links a:focus-visible{border-bottom-color:var(--accent)}
+.links span{color:var(--mute)}
+.grid{display:grid;grid-template-columns:310px minmax(0,1fr);gap:24px;margin-top:24px}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.controls{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:18px;display:flex;flex-direction:column;gap:15px;align-self:start;min-width:0}
+.lab{font-family:var(--display);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.lab output{font-family:var(--mono);letter-spacing:0;text-transform:none;color:var(--ink);font-size:13px;text-align:right}
+.ends{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--mute);margin-top:-2px}
+input[type=range]{width:100%;accent-color:var(--accent);margin:4px 0 0}
+select,button,input[type=text],input[type=number],textarea{font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--rule);border-radius:4px;padding:6px 8px;min-width:0}
+input[type=number],input[type=text]{font-family:var(--mono);font-size:13px}
+select{width:100%}
+textarea{width:100%;box-sizing:border-box;font-family:var(--mono);font-size:12px;line-height:1.45;resize:vertical}
+button{cursor:pointer;font-family:var(--display);font-weight:500;letter-spacing:.02em}
+button:hover{border-color:var(--accent);color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed;border-color:var(--rule);color:var(--ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.hint{font-size:13px;color:var(--mute);margin:0}
+.m{text-transform:none;letter-spacing:0;font-family:var(--body);font-style:italic;font-size:1.08em}
+.score:empty{display:none}
+.sep{border:0;border-top:1px solid var(--rule);margin:2px 0;width:100%}
+details summary{cursor:pointer;font-family:var(--display);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.orb{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;align-items:center;margin-top:10px}
+.orb label{font-family:var(--mono);font-size:12px;color:var(--mute)}
+.orb input{width:100%;box-sizing:border-box}
+.seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--rule);border-radius:4px;overflow:hidden}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{text-align:center;padding:6px 0;font-family:var(--display);font-size:14px;cursor:pointer;border-left:1px solid var(--rule);color:var(--mute)}
+.seg label:first-of-type{border-left:0}
+.seg input:checked+label{background:var(--ice,var(--accent));color:var(--panel)}
+.seg input:focus-visible+label{outline:2px solid var(--accent);outline-offset:-2px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.two input,.two select,.three input{width:100%;box-sizing:border-box}
+.controls .three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.check{display:inline-flex;gap:6px;align-items:center;font-size:14px}
+.score{font-family:var(--mono);font-size:13px;padding:8px 10px;border-radius:4px;border:1px solid var(--rule);min-height:1.45em}
+.score.good{color:var(--good);border-color:var(--good)} .score.mid{color:var(--warn);border-color:var(--warn)}
+.plots{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;min-width:0;align-content:start}
+.pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;min-width:0}
+@media (max-width:980px){.pair{grid-template-columns:minmax(0,1fr)}}
+figure{margin:0;background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:12px 12px 8px;min-width:0;position:relative}
+figcaption{font-family:var(--display);font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);padding:0 4px 6px;display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap}
+canvas{display:block;width:100%;max-width:100%;touch-action:pan-y}
+#c1{cursor:ew-resize}
+.key{display:inline-flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-family:var(--body);font-size:13px}
+.sw{width:18px;height:0;border-top:2px solid var(--accent)} .sw.d{border-top:2px dashed var(--ghost)} .sw.e{border-top:2px dashed var(--ink)} .ring{width:7px;height:7px;border-radius:50%;border:1.5px solid var(--obs);box-sizing:border-box} .dot{width:7px;height:7px;border-radius:50%;background:var(--obs)}
+.tog{display:inline-flex;border:1px solid var(--rule);border-radius:4px;overflow:hidden}
+.tog button{border:0;border-radius:0;padding:3px 10px;font-size:13px;background:transparent;text-transform:none;letter-spacing:.02em}
+.tog button[aria-pressed="true"]{background:var(--accent);color:var(--panel)}
+.read{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+@media (max-width:620px){.read{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.read div{min-width:0;background:var(--panel);padding:9px 12px}
+.read b{display:block;font-family:var(--display);font-weight:500;font-size:12px;letter-spacing:.04em;color:var(--mute);text-transform:uppercase}
+.read span{font-family:var(--mono);font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:6px 10px;text-align:right;border-bottom:1px solid var(--rule);white-space:nowrap;font-variant-numeric:tabular-nums}
+th{font-family:var(--display);font-weight:500;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+td{font-family:var(--mono);font-size:13px}
+th:first-child,td:first-child{text-align:left}
+tbody tr{cursor:pointer}
+tbody tr:hover td{background:var(--bg)}
+tr.on td{background:var(--bg);font-weight:500}
+tr.best td:last-child{color:var(--good)}
+.chip{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:8px;vertical-align:-1px}
+.inl{display:inline-flex;gap:6px;align-items:center;text-transform:none;letter-spacing:0;font-family:var(--body);font-size:13px}
+.inl input{width:9.5em;padding:3px 6px}
+.lower{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:18px;margin-top:18px;align-items:start}
+@media (max-width:980px){.lower{grid-template-columns:minmax(0,1fr)}}
+.budget{display:flex;flex-direction:column;gap:12px;padding:0 4px 6px}
+.budget .three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.budget .three input{width:100%;box-sizing:border-box}
+.out{font-family:var(--mono);font-size:13px;line-height:1.6;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;padding:1px 9px;border-radius:999px;border:1px solid currentColor;font-family:var(--display);font-size:13px;letter-spacing:.03em}
+.pill.ok{color:var(--good)} .pill.no{color:var(--obs)}
+.tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:5px 8px;font-family:var(--mono);font-size:12px;line-height:1.4;box-shadow:0 2px 8px rgba(0,0,0,.12);max-width:260px}
+footer{margin-top:24px;color:var(--mute);font-size:13px;max-width:100ch}
+footer p{margin:.4rem 0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<div class="wrap">
+<header>
+  <h1>Light Up a Comet</h1>
+  <p>Pick a comet, the ice that drives it and how the Sun’s heat spreads over the nucleus. The model of <em>Forecasting comet light curves from sublimation physics</em> computes the share η<sub>X</sub> of the absorbed sunlight that goes into sublimation and the magnitude in your aperture. Add your own photometry, fit the coma, compare the ices and read off forecasts.</p>
+  <p class="eq">m = H<sub>N</sub> + 5 log(rΔ) + αβ<sub>N</sub> − 2.5 log[1 + μ η<sub>X</sub>(r) r<sup>−3/2</sup> Δ<sup>j</sup> 10<sup>0.4αβ<sub>N</sub></sup>] &nbsp;(Eq. 14), &nbsp;Afρ = K η<sub>X</sub>(r) r<sup>−3/2</sup></p>
+  <nav class="links" aria-label="Paper, code and citation">
+    <span>Paper: B. R. Parodi, Am. J. Phys. (submitted)</span>
+    <a href="https://github.com/beroparodi/clc" target="_blank" rel="noopener">Code on GitHub</a>
+    <a href="https://github.com/beroparodi/clc/blob/main/CITATION.cff" target="_blank" rel="noopener">How to cite</a>
+  </nav>
+</header>
+
+<div class="grid">
+  <section class="controls" aria-label="Inputs">
+    <div><div class="lab"><label for="comet">Comet</label></div>
+      <select id="comet">
+        <optgroup label="In the paper">
+          <option value="un271">C/2014 UN271 (Bernardinelli–Bernstein)</option>
+          <option value="t5">C/2024 T5 (ATLAS)</option>
+          <option value="y1">C/2025 Y1 (ATLAS)</option>
+        </optgroup>
+        <optgroup label="More comets">
+          <option value="halley">1P/Halley, return of 2061</option>
+          <option value="encke">2P/Encke, 2027</option>
+          <option value="p12">12P/Pons–Brooks, 2024</option>
+          <option value="sw1">29P/Schwassmann–Wachmann</option>
+          <option value="p67">67P/Churyumov–Gerasimenko, 2028</option>
+          <option value="hb">C/1995 O1 (Hale–Bopp), 1997</option>
+          <option value="hyak">C/1996 B2 (Hyakutake), 1996</option>
+          <option value="neo">C/2020 F3 (NEOWISE)</option>
+          <option value="a3">C/2023 A3 (Tsuchinshan–ATLAS)</option>
+          <option value="i3">3I/ATLAS (interstellar)</option>
+        </optgroup>
+        <optgroup label="Your own">
+          <option value="custom">Your comet: enter its orbit</option>
+        </optgroup>
+      </select>
+      <p class="hint" id="cometnote" style="margin-top:6px"></p></div>
+    <details id="orbitbox"><summary>Orbit (ecliptic J2000)</summary>
+      <div class="orb">
+        <label for="oq">q (au)</label><input id="oq" type="text" inputmode="decimal">
+        <label for="oe">e</label><input id="oe" type="text" inputmode="decimal">
+        <label for="oi">i (°)</label><input id="oi" type="text" inputmode="decimal">
+        <label for="oO">Ω (°)</label><input id="oO" type="text" inputmode="decimal">
+        <label for="ow">ω (°)</label><input id="ow" type="text" inputmode="decimal">
+        <label for="oT">T (UT)</label><input id="oT" type="text" placeholder="2031-01-23 09:46">
+      </div>
+      <p class="hint" style="margin-top:6px">From the JPL Small-Body Database or the MPC. Leave i, Ω, ω empty if unknown: the Afρ view still works.</p>
+    </details>
+    <div><div class="lab"><span id="icelab">Ice that drives the activity</span></div>
+      <div class="seg" role="radiogroup" aria-labelledby="icelab">
+        <input type="radio" name="ice" id="ice-CO" value="CO"><label for="ice-CO" style="--ice:var(--co)">CO</label>
+        <input type="radio" name="ice" id="ice-CO2" value="CO2"><label for="ice-CO2" style="--ice:var(--co2)">CO₂</label>
+        <input type="radio" name="ice" id="ice-H2O" value="H2O"><label for="ice-H2O" style="--ice:var(--h2o)">H₂O</label>
+      </div></div>
+    <div><div class="lab"><label for="cz">Heat spread <span class="m">⟨cos ζ⟩</span></label><output id="czo"></output></div>
+      <input id="cz" type="range" min="0.25" max="1" step="0.01">
+      <div class="ends"><span>isothermal ¼</span><span>subsolar 1</span></div></div>
+    <div><div class="lab"><label for="hm">Dust mantle <span class="m">h</span></label><output id="hmo"></output></div>
+      <input id="hm" type="range" min="-2" max="3" step="0.01">
+      <div class="ends"><span>thick 0.01</span><span>none</span></div></div>
+    <div><div class="lab"><label for="hn">Nucleus <span class="m">H<sub>N</sub></span></label><output id="hno"></output></div>
+      <input id="hn" type="range" min="2" max="22" step="0.01"></div>
+    <div><div class="lab"><label for="beta">Phase coefficient <span class="m">β<sub>N</sub></span></label><output id="betao"></output></div>
+      <input id="beta" type="range" min="0" max="0.08" step="0.001"></div>
+    <div><div class="lab"><label for="lk">Coma scale <span class="m">K</span></label><output id="lko"></output></div>
+      <input id="lk" type="range" min="-1" max="10" step="0.001">
+      <p class="hint" id="munote"></p></div>
+    <div class="two">
+      <div><div class="lab"><label for="j">Aperture</label></div>
+        <select id="j"><option value="1">radius ″ (j = 1)</option><option value="0">radius km (j = 0)</option></select></div>
+      <div><div class="lab"><label for="ap">Size</label></div><input id="ap" type="number" min="0.1" step="any"></div>
+    </div>
+    <div class="three">
+      <div><div class="lab"><label for="msun">Sun <span class="m">m<sub>⊙</sub></span></label></div><input id="msun" type="text" inputmode="decimal"></div>
+      <div><div class="lab"><label for="y0">From</label></div><input id="y0" type="text" inputmode="numeric"></div>
+      <div><div class="lab"><label for="y1">To</label></div><input id="y1" type="text" inputmode="numeric"></div>
+    </div>
+    <p class="hint">Sun: V −26.76, r′ −26.93. Use H<sub>N</sub> and m<sub>⊙</sub> in the band of your photometry; From and To set the years shown.</p>
+    <hr class="sep">
+    <div><div class="lab"><label for="obs">Photometry: date, magnitude, error</label><output id="nobs"></output></div>
+      <textarea id="obs" rows="5" spellcheck="false"></textarea>
+      <p class="hint">One line each, e.g. <code>2024-02-15 17.38 0.03</code>. Dates as YYYY-MM-DD[ hh:mm], decimal year or JD; text after # is ignored. All lines share the aperture above.</p></div>
+    <div class="row">
+      <button id="fit" type="button">Fit the coma</button>
+      <label class="check"><input id="fith" type="checkbox"> also <i>H</i><sub>N</sub></label>
+      <button id="cmp" type="button">Compare ices</button>
+    </div>
+    <div class="row">
+      <label class="check"><input id="emp" type="checkbox" checked> empirical law</label>
+      <label class="check" for="cut">fit only before</label><input id="cut" type="text" placeholder="all data" style="width:9em">
+    </div>
+    <p class="hint">The empirical law <span class="m">m = m<sub>0</sub> + 5 log Δ + 2.5 n log r</span> is fitted (<span class="m">m<sub>0</sub></span> and <span class="m">n</span>) to the same points as the coma. With a date, Fit and Compare use only earlier points; later ones (open circles) test both forecasts.</p>
+    <div id="score" class="score" aria-live="polite"></div>
+  </section>
+
+  <div class="plots">
+    <figure>
+      <figcaption><span class="row" style="gap:10px"><span>Light curve</span>
+          <span class="tog" role="group" aria-label="View"><button id="vmag" type="button" aria-pressed="true">Magnitude</button><button id="vafr" type="button" aria-pressed="false">Afρ growth</button></span></span>
+        <span id="key1"></span></figcaption>
+      <canvas id="c1" tabindex="0" role="img" aria-label="Light curve of the model comet with observations, nucleus alone, perihelion and today; drag to move the date line"></canvas>
+    </figure>
+    <div class="read" id="read" aria-live="polite"></div>
+    <div class="pair">
+      <figure>
+        <figcaption><span>Share of power used, <span class="m">η<sub>X</sub></span></span><span class="key">band: from ⟨cos ζ⟩ = ¼ to 1</span></figcaption>
+        <canvas id="c2" role="img" aria-label="Energy share eta of CO, CO2 and water ice against distance from the Sun"></canvas>
+      </figure>
+      <figure>
+        <figcaption><span>Activity index <span class="m">n = 2 + k</span></span><span class="key"><span class="sw d"></span>Holt et al. 2026</span></figcaption>
+        <canvas id="c3" role="img" aria-label="Local activity index n against distance from the Sun for the three ices, with the empirical fit of Holt et al. 2026"></canvas>
+      </figure>
+    </div>
+    <figure>
+      <figcaption><span>All ices for this comet</span>
+        <label class="inl" for="ref">Afρ growth from <input id="ref" type="text" placeholder="YYYY-MM-DD"> to the date line</label></figcaption>
+      <div class="tbl"><table id="tab">
+        <thead><tr><th scope="col">Ice and heat spread</th><th scope="col"><span class="m">k</span> at date</th><th scope="col"><span class="m">n</span> at date</th><th scope="col"><span class="m">Afρ</span> growth</th><th scope="col"><span class="m">m</span> at date</th><th scope="col">fit <span class="m">χ²<sub>ν</sub></span></th></tr></thead>
+        <tbody></tbody></table></div>
+      <p class="hint" style="padding:6px 4px 0">Click a row to use it. “Compare ices” fits K (and H<sub>N</sub> if ticked) for every row; the smallest χ²<sub>ν</sub> is in green.</p>
+    </figure>
+  </div>
+</div>
+
+<div class="lower">
+  <figure>
+    <figcaption><span>Energy budget of the nucleus</span></figcaption>
+    <div class="budget">
+      <select id="bpre" aria-label="Example">
+        <option value="neo">C/2020 F3 (NEOWISE) at its water peak</option>
+        <option value="3i">3I/ATLAS near perihelion</option>
+        <option value="own">Your own numbers</option>
+      </select>
+      <div class="three">
+        <div><div class="lab"><label for="bq"><span class="m">Q</span> (s⁻¹)</label></div><input id="bq" type="text" inputmode="decimal"></div>
+        <div><div class="lab"><label for="br"><span class="m">r</span> (au)</label></div><input id="br" type="text" inputmode="decimal"></div>
+        <div><div class="lab"><label for="brn"><span class="m">R<sub>N</sub></span> (km)</label></div><input id="brn" type="text" inputmode="decimal"></div>
+      </div>
+      <div class="out" id="bout" aria-live="polite"></div>
+      <p class="hint">Water from the whole projected disk at the subsolar point, the most a nucleus of radius R<sub>N</sub> can deliver: Q<sub>max</sub> = πR<sub>N</sub>²(1−A<sub>B</sub>)S<sub>⊙</sub>η/(r²L m). An active fraction f = Q/Q<sub>max</sub> above 1 needs another water source, such as icy grains in the coma.</p>
+    </div>
+  </figure>
+  <figure>
+    <figcaption><span>Backtest: the <span class="m">p–q</span> diagram of water production</span><span id="swansum" class="key"></span></figcaption>
+    <canvas id="c4" role="img" aria-label="Exponents p of the SOHO/SWAN water production laws against perihelion distance, with the band predicted for a constant active area"></canvas>
+    <div class="tip" id="tip" hidden></div>
+    <p class="hint" style="padding:6px 4px 0">Exponent p of Q ∝ r<sup>p</sup> before (●) and after (■) perihelion for 82 apparitions of 58 comets (Combi et al. 2019 and later SWAN papers, 3I/ATLAS from Tan et al. 2026). Open squares: medians in q bins split at 0.3, 0.6, 0.9, 1.1 and 1.4 au, with 68% bootstrap bars. The dark band spans the constant-area prediction from the isothermal (dashed) to the subsolar limit (solid); the light band adds a dust mantle of any conductance h ≥ 0.03 W m⁻² K⁻¹ (dotted top). A mantle can only flatten the law, so the steep points need a growing active area. Hover to see each comet.</p>
+  </figure>
+</div>
+
+<footer>
+  <p>Constants of the paper: S<sub>⊙</sub> = 1361 W m⁻², Bond albedo A<sub>B</sub> = 0.01, emissivity ε = 0.9, vapor pressures P<sub>X</sub> = A<sub>X</sub> e<sup>−B<sub>X</sub>/T</sup> and latent heats L<sub>X</sub> = B<sub>X</sub>k<sub>B</sub>/m<sub>X</sub> (Table I). K is the Afρ the comet would have at 1 au if all absorbed power went into sublimation; μ follows from K, H<sub>N</sub>, m<sub>⊙</sub> and the aperture. The dust speed is taken ∝ r<sup>−1/2</sup>. A dust mantle of conductance h = κ/d splits the energy balance into one at the surface, (1−A<sub>B</sub>)S<sub>⊙</sub>⟨cos ζ⟩/r² = εσT<sub>s</sub>⁴ + h(T<sub>s</sub> − T<sub>i</sub>), and one at the ice front, h(T<sub>s</sub> − T<sub>i</sub>) = Z<sub>X</sub>(T<sub>i</sub>)L<sub>X</sub>. Orbits are two-body conics with a low-precision Earth, accurate to a few 0.01 au.</p>
+  <p>Data: C/2014 UN271 photometry from Kelley et al. 2022 (LOOK) and Roth et al. 2025 (LCO), its orbit from the JPL Small-Body Database; C/2024 T5 elements as in the paper, C/2025 Y1 from the JPL Small-Body Database; elements of the other comets from the JPL Small-Body Database (via TheSkyLive and Wikipedia), for Hale–Bopp from NASA’s NSSDC; nucleus sizes of 1P (Giotto), 2P (Fernández et al. 2000), 29P (Schambeau et al. 2015), 67P (Rosetta), Hale–Bopp (NSSDC) and Hyakutake (Arecibo radar), each with the stated albedo; SWAN exponents from Combi et al. 2019, 2021 (six comets, arXiv:2105.06565) and 2025 (K2 and E3, fitted to their tables); activity index fit from Holt et al. 2026; NEOWISE from Combi et al. 2021; 3I/ATLAS from Tan et al. 2026 and Hui et al. 2026. Light curves: COBS Comet Observation Database (cobs.si), binned, CC BY-NC-SA 4.0; UN271 magnitudes from COBS moved to r′ in 6″ as described in the tool’s data notes.</p>
+</footer>
+</div>
+<script>
+/*MODEL*/
+</script>
+<script>
+/*UI*/
+</script>

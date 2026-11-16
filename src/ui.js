@@ -1,0 +1,528 @@
+// ---- Page logic for "Light Up a Comet"
+const $ = (id) => document.getElementById(id);
+const DAY = 86400000;
+const ICE_NAME = { CO: "CO", CO2: "CO₂", H2O: "H₂O" };
+const ICE_VAR = { CO: "--co", CO2: "--co2", H2O: "--h2o" };
+const SCEN = [
+  { x: "CO", c: 1, lab: "CO, subsolar" }, { x: "CO2", c: 1, lab: "CO₂, subsolar" }, { x: "CO2", c: 0.25, lab: "CO₂, isothermal" },
+  { x: "H2O", c: 1, lab: "H₂O, subsolar" }, { x: "H2O", c: 0.25, lab: "H₂O, isothermal" }];
+
+const PRESETS = {
+  un271: {
+    orbit: { q: "10.94525581", e: "0.99869477", i: "95.55335892", Om: "190.0846361196", w: "326.33161880945", T: fmtDT(msOf(2462892.9068)) },
+    ice: "CO2", cz: 1, HN: 8.40, beta: 0.04, lk: Math.log10(4.110e6), j: 1, ap: 6, msun: -26.93, y0: 2010, y1: 2036, ref: "2024-02-15", view: "mag", cut: "2024-06-01",
+    obs: "# r′ magnitude in a 6″ radius aperture\n2021-12-15 18.99 0.05  # LOOK, Oct 2021–Feb 2022 (Kelley et al. 2022)\n2024-02-15 17.38 0.03  # LCO, Feb 2024 (Roth et al. 2025)",
+    nbox: { r0: 16.70, r1: 19.53, n: 9.0, s: 0.4 },
+    note: "Nucleus 120–140 km across (H<sub>N</sub> = 8.40 in r′). The paper anchors K on the 2024 point with CO₂ at the subsolar point (μ = 271). The later points are monthly medians of amateur CCD photometry from COBS (2024 Oct – 2026 Nov), not used in the paper: each magnitude, measured in a 8–73″ aperture, is converted to r′ in 6″ by removing the nucleus, scaling the coma flux by 6″/ρ and taking V − r′ = 0.22. They follow the CO₂ forecast (median offset 0.00 mag), while the empirical law through the two professional points, with a constant n, is already about 0.45 mag too bright. Clear “fit only before” to fit all points."
+  },
+  t5: {
+    orbit: { q: "3.84251371", e: "1.00240368", i: "52.38681511", Om: "100.67985066075", w: "352.41723883275", T: "2027-05-06 02:38" },
+    ice: "CO2", cz: 1, HN: 15, beta: 0.04, lk: 5.001, j: 0, ap: 20000, msun: -26.76, y0: 2025, y1: 2029, ref: "2026-11-10", view: "afr", obs: "",
+    note: "Perihelion 3.84 au on 2027 May 6, at the outer edge of the water zone. H<sub>N</sub> is a placeholder; K is fitted to the COBS total magnitudes (aperture 20 000 km). So far CO₂ or CO fits (χ²<sub>ν</sub> ≈ 2), water does not: Compare ices."
+  },
+  y1: {
+    orbit: { q: "2.601924069", e: "0.999552254", i: "14.55698337", Om: "166.5518278289", w: "124.2978493120", T: fmtDT(msOf(2461692.5495)) },
+    ice: "CO2", cz: 1, HN: 15, beta: 0.04, lk: 4.285, j: 0, ap: 20000, msun: -26.76, y0: 2025, y1: 2029, ref: "2026-12-20", view: "afr", obs: "",
+    note: "Perihelion 2.6 au on 2027 Oct 16, where water switches on (JPL elements, 2026 Sep solution). H<sub>N</sub> is a placeholder; K is fitted to the COBS total magnitudes. So far CO₂ fits (χ²<sub>ν</sub> ≈ 1) and water does not; a brightening well above the CO₂ curve in 2027 would show water ice at work."
+  }
+};
+
+const MORE = (orbit, o) => ({ orbit, beta: 0.04, j: 0, ap: 20000, msun: -26.76, cz: 1, lk: 4, view: "afr", obs: "", ...o });
+Object.assign(PRESETS, {
+  halley: MORE({ q: "0.57471580", e: "0.96794279", i: "162.18787119", Om: "59.114482936739", w: "112.25779200487", T: "2061-07-28 12:00" },
+    { ice: "H2O", HN: 13.91, y0: 2050, y1: 2066, ref: "2060-10-28",
+      note: "Now near aphelion at 35 au; next perihelion 2061 July 28 at about 0.6 au. Elements of the 1986 apparition (JPL) moved to the predicted 2061 perihelion, without planetary perturbations. H<sub>N</sub> from Giotto’s nucleus, 15 × 8 × 8 km (D ≈ 11 km seen side-on, p = 0.04); K is a placeholder." }),
+  encke: MORE({ q: "0.33794828", e: "0.84774970", i: "11.41227811", Om: "334.19358460368", w: "187.13424636959", T: fmtDT(msOf(2461447.5650)) },
+    { ice: "H2O", HN: 15.53, y0: 2026, y1: 2028, ref: "2026-01-01",
+      note: "Period 3.3 years, perihelion 2027 Feb 11 at 0.34 au. Only a small part of its surface is active: try the dust mantle. H<sub>N</sub> from R<sub>N</sub> ≈ 2.4 km and p = 0.047; K is a placeholder." }),
+  sw1: MORE({ q: "5.77512802", e: "0.04479814", i: "9.36477141", Om: "312.39091654503", w: "50.662700071797", T: fmtDT(msOf(2458589.9259)) },
+    { lk: 6.064, ice: "CO", HN: 10.22, y0: 2010, y1: 2040, ref: "2026-01-01",
+      note: "Nearly circular orbit between 5.8 and 6.3 au, always active and known for outbursts. Compare CO, which works at any distance, with CO₂ and water. H<sub>N</sub> from R<sub>N</sub> ≈ 30 km and p = 0.04; K is fitted to the COBS magnitudes 2010–2026, above which the outbursts stand out." }),
+  p67: MORE({ q: "1.210", e: "0.64989", i: "3.8719", Om: "36.33", w: "22.15", T: "2028-04-09 12:00" },
+    { ice: "H2O", HN: 15.99, y0: 2026, y1: 2031, ref: "2027-01-01",
+      note: "Rosetta’s comet; next perihelion 2028 Apr 9 at 1.21 au. H<sub>N</sub> from the mean radius 1.65 km and p<sub>V</sub> = 0.065; K is a placeholder." }),
+  p12: MORE({ q: "0.78086475", e: "0.95456023", i: "74.19083929", Om: "255.85505059528", w: "198.98800614657", T: fmtDT(msOf(2460421.6316)) },
+    { lk: 4.991, ice: "H2O", HN: 13, y0: 2022, y1: 2026, ref: "2023-07-09",
+      note: "Halley-type comet with a 71-year period and repeated outbursts before its perihelion of 2024 Apr 21 at 0.78 au. Its nucleus is not measured: H<sub>N</sub> is a placeholder; K is fitted to the COBS magnitudes, which show the 2023 outbursts above the water curve." }),
+  a3: MORE({ q: "0.39145906", e: "1.00012475", i: "139.11502467", Om: "21.558609111275", w: "308.4872848828", T: fmtDT(msOf(2460581.2353)) },
+    { lk: 4.56, ice: "CO2", HN: 15, y0: 2023, y1: 2026, ref: "2024-01-22",
+      note: "The bright comet of October 2024; perihelion 2024 Sep 27 at 0.39 au on a nearly parabolic orbit. H<sub>N</sub> is a placeholder; K is fitted to the COBS magnitudes. CO₂ fits the whole arc far better than water (χ²<sub>ν</sub> 20 against 150): it was active at 7 au." }),
+  neo: MORE({ q: "0.295", e: "0.99921", i: "128.94", Om: "61.010", w: "37.279", T: "2020-07-03 12:00" },
+    { lk: 4.227, ice: "H2O", HN: 15, y0: 2019, y1: 2022, ref: "2019-11-03",
+      note: "The bright comet of July 2020; perihelion 2020 Jul 3 at 0.29 au. Its peak water production needs a nucleus of at least 3.5 km radius: see the energy budget below. H<sub>N</sub> is a placeholder; K is fitted to the COBS magnitudes. The faint points in April 2020 are small-aperture CCD magnitudes." }),
+  hb: MORE({ q: "0.9141", e: "0.9951", i: "89.43", Om: "282.47", w: "130.59", T: "1997-04-01 03:19" },
+    { lk: 7.293, ice: "CO", HN: 11.39, y0: 1995, y1: 2000, ref: "1995-07-23",
+      note: "The Great Comet of 1997. It was discovered on 1995 Jul 23 at 7.1 au, far beyond the water zone: compare CO with water. Perihelion 1997 Apr 1 at 0.91 au. H<sub>N</sub> for a nucleus 35 km across (30–40 km) and p = 0.04; K is fitted to the COBS magnitudes 1995–1999. Constant-area CO follows them over four years (χ²<sub>ν</sub> ≈ 3); water alone does not (Compare ices)." }),
+  hyak: MORE({ q: "0.23022353", e: "0.99989165", i: "124.92204939", Om: "188.04513199216", w: "130.1751209781", T: fmtDT(msOf(2450204.8941)) },
+    { lk: 4.814, ice: "H2O", HN: 15.71, y0: 1996, y1: 1997, ref: "1996-01-30", view: "mag", cursor: "1996-03-25",
+      note: "The Great Comet of 1996. Discovered on 1996 Jan 30, it passed 0.10 au from the Earth on Mar 25, five weeks before perihelion at 0.23 au: the magnitude view shows the close approach. H<sub>N</sub> from the radar nucleus (D ≈ 4.8 km, p = 0.04); K is fitted to the COBS magnitudes. Its SWAN water exponents are the points at q = 0.23 au below." }),
+  i3: MORE({ q: "1.35638454", e: "6.13941774", i: "175.11310480", Om: "322.15684249105", w: "128.01051366675", T: fmtDT(msOf(2460977.9814)) },
+    { lk: 4.0, ice: "H2O", HN: 17.04, y0: 2025, y1: 2027, ref: "2025-07-16",
+      note: "The third interstellar object, on a hyperbola with e = 6.14; perihelion 2025 Oct 29 at 1.36 au. H<sub>N</sub> from R<sub>N</sub> = 1.3 km and p = 0.04; K is fitted to the COBS magnitudes. Its water production exceeds what this nucleus can deliver: see the energy budget below." }),
+});
+
+// COBS light curves (data/cobs_lightcurves.txt, CC BY-NC-SA 4.0), appended to the presets
+const COBS_HEAD = {
+  un271: "# not used in the paper: COBS CCD photometry moved to r′ in 6″ (monthly medians, see the note)",
+  other: "# total magnitudes from COBS (median per bin; CC BY-NC-SA 4.0)" };
+if (typeof COBS === "object") for (const [k, txt] of Object.entries(COBS)) {
+  const p = PRESETS[k]; if (!p) continue;
+  p.obs = (p.obs ? p.obs + "\n" : "") + (COBS_HEAD[k] || COBS_HEAD.other) + "\n" + txt;
+  if (k !== "un271") p.view = "mag";
+}
+
+const S = { view: "mag", cursor: Date.now(), cmp: null, nbox: null, series: null };
+
+// ---------- small helpers
+function num(s) { const v = parseFloat(String(s).replace("−", "-").replace(",", ".")); return Number.isFinite(v) ? v : NaN; }
+function pad(n) { return String(n).padStart(2, "0"); }
+function fmtD(ms) { const d = new Date(ms); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`; }
+function fmtDT(ms) { const d = new Date(ms); return `${fmtD(ms)} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`; }
+function parseDate(s) {
+  s = String(s).trim(); if (!s) return NaN;
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  if (m) return Date.UTC(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
+  const v = num(s); if (!Number.isFinite(v)) return NaN;
+  if (v > 2e6) return msOf(v);                                   // Julian date
+  if (v > 1000 && v < 3000) { const y = Math.floor(v), a = Date.UTC(y, 0, 1), b = Date.UTC(y + 1, 0, 1); return a + (v - y) * (b - a); }
+  return NaN;
+}
+function yearOf(ms) { const y = new Date(ms).getUTCFullYear(), a = Date.UTC(y, 0, 1), b = Date.UTC(y + 1, 0, 1); return y + (ms - a) / (b - a); }
+function msOfYear(v) { const y = Math.floor(v), a = Date.UTC(y, 0, 1), b = Date.UTC(y + 1, 0, 1); return a + (v - y) * (b - a); }
+function mi(s) { return String(s).replace(/-/g, "−"); }
+function sci(v, d = 3) {
+  if (!Number.isFinite(v)) return "—"; if (v === 0) return "0";
+  const e = Math.floor(Math.log10(Math.abs(v)));
+  if (e >= d - 1 && e <= 4) return mi(Number(v.toPrecision(d)).toLocaleString("en-US"));
+  if (e >= -2 && e < d - 1) return mi(Number(v.toPrecision(d)).toString());
+  return `${mi((v / 10 ** e).toFixed(d - 1))} × 10<sup>${mi(e)}</sup>`;
+}
+function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function alpha(color, a) {
+  const c = color.replace("#", ""); if (c.length !== 6) return color;
+  return `rgba(${parseInt(c.slice(0, 2), 16)},${parseInt(c.slice(2, 4), 16)},${parseInt(c.slice(4, 6), 16)},${a})`;
+}
+
+// ---------- reading the controls
+function readOrbit() {
+  const q = num($("oq").value), e = num($("oe").value), i = num($("oi").value), Om = num($("oO").value), w = num($("ow").value);
+  const T = parseDate($("oT").value);
+  const ok = q > 0 && e >= 0 && Number.isFinite(T);
+  return { ok, q, e, i, Om, w, Tp: jdOf(T), Tms: T, full: ok && [i, Om, w].every(Number.isFinite) };
+}
+function params() {
+  return { ice: document.querySelector('input[name="ice"]:checked').value, cz: +$("cz").value, HN: +$("hn").value, beta: +$("beta").value,
+    lk: +$("lk").value, h: +$("hm").value >= 2.995 ? Infinity : 10 ** +$("hm").value, j: +$("j").value, ap: Math.max(1e-3, num($("ap").value) || 6), msun: Number.isFinite(num($("msun").value)) ? num($("msun").value) : -26.76 };
+}
+function windowMs() {
+  let y0 = num($("y0").value), y1 = num($("y1").value);
+  if (!Number.isFinite(y0)) y0 = 2020; if (!Number.isFinite(y1) || y1 <= y0) y1 = y0 + 1;
+  return [Date.UTC(Math.round(y0), 0, 1), Date.UTC(Math.round(y1), 0, 1)];
+}
+function cutMs() { const v = parseDate($("cut").value); return Number.isFinite(v) ? v : Infinity; }
+// empirical law m = m0 + 5 lg D + 2.5 n lg r, weighted least squares in (m0, n)
+function fitEmp(pts) {
+  let S0 = 0, Sx = 0, Sy = 0, Sxx = 0, Sxy = 0;
+  for (const p of pts) { const w = 1 / p.s ** 2, x = 2.5 * Math.log10(p.r), y = p.m - 5 * Math.log10(p.D); S0 += w; Sx += w * x; Sy += w * y; Sxx += w * x * x; Sxy += w * x * y; }
+  const det = S0 * Sxx - Sx * Sx; if (pts.length < 2 || !(Math.abs(det) > 1e-12 * S0 * S0)) return null;
+  const n = (S0 * Sxy - Sx * Sy) / det; return { n, m0: (Sy - n * Sx) / S0 };
+}
+function empMag(f, r, D) { return f.m0 + 5 * Math.log10(D) + 2.5 * f.n * Math.log10(r); }
+function parseObs() {
+  const out = [], bad = [];
+  $("obs").value.split(/\n/).forEach((line, k) => {
+    const t = line.replace(/#.*/, "").trim(); if (!t) return;
+    const p = t.split(/[\s,;]+/); let ms, rest;
+    if (p.length >= 3 && /^\d{1,2}:\d{2}/.test(p[1])) { ms = parseDate(p[0] + " " + p[1]); rest = p.slice(2); } else { ms = parseDate(p[0]); rest = p.slice(1); }
+    const m = num(rest[0]), s = rest.length > 1 ? num(rest[1]) : 0.1;
+    if (Number.isFinite(ms) && Number.isFinite(m)) out.push({ ms, m, s: s > 0 ? s : 0.1 }); else bad.push(k + 1);
+  });
+  return { obs: out, bad };
+}
+
+// ---------- model series over the window
+function compute() {
+  const el = readOrbit(), P = params(), [t0, t1] = windowMs();
+  const N = 520, t = [], r = [], D = [], al = [], m = [], mN = [], A = [];
+  const K = 10 ** P.lk, mu = muFrom(K, P);
+  if (el.ok) for (let k = 0; k <= N; k++) {
+    const ms = t0 + (t1 - t0) * k / N, g = ephem(el, ms), et = eta(g.r, P.ice, P.cz, P.h);
+    t.push(ms); r.push(g.r); D.push(g.D); al.push(g.alpha); A.push(afrho(K, g.r, et));
+    if (el.full) { const mg = magnitude(g.r, g.D, g.alpha, et, P, mu); m.push(mg.m); mN.push(mg.mN); } else { m.push(NaN); mN.push(NaN); }
+  }
+  let emp = null, mE = [];
+  if (el.full && $("emp").checked) {
+    const cut = cutMs(), pts = parseObs().obs.filter((o) => o.ms < cut).map((o) => { const g = ephem(el, o.ms); return { ...o, r: g.r, D: g.D }; });
+    emp = fitEmp(pts); if (emp) mE = r.map((rv, k) => empMag(emp, rv, D[k]));
+  }
+  S.series = { el, P, t0, t1, t, r, D, al, m, mN, A, K, mu, emp, mE };
+  return S.series;
+}
+
+// ---------- canvas plumbing
+function frame(cv, ar, minH, maxH) {
+  const dpr = Math.min(2, window.devicePixelRatio || 1), w = Math.max(240, Math.floor(cv.clientWidth || cv.parentNode.clientWidth - 24));
+  const h = Math.max(minH, Math.min(maxH || 1e9, Math.round(w * ar)));
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  cv.style.height = h + "px";
+  const g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  return { g, w, h };
+}
+function lin(d0, d1, p0, p1) { const f = (v) => p0 + (v - d0) / (d1 - d0) * (p1 - p0); f.inv = (p) => d0 + (p - p0) / (p1 - p0) * (d1 - d0); f.d = [d0, d1]; f.p = [p0, p1]; return f; }
+function logs(d0, d1, p0, p1) { const a = Math.log10(d0), b = Math.log10(d1); const f = (v) => p0 + (Math.log10(v) - a) / (b - a) * (p1 - p0); f.inv = (p) => 10 ** (a + (p - p0) / (p1 - p0) * (b - a)); f.d = [d0, d1]; f.p = [p0, p1]; f.log = true; return f; }
+function niceStep(span, n) { const s0 = span / n, mg = 10 ** Math.floor(Math.log10(s0)), e = s0 / mg; return (e >= 7.5 ? 10 : e >= 3.5 ? 5 : e >= 1.5 ? 2 : 1) * mg; }
+function linTicks(d0, d1, n) { const lo = Math.min(d0, d1), hi = Math.max(d0, d1), st = niceStep(hi - lo, n), out = []; for (let v = Math.ceil(lo / st - 1e-9) * st; v <= hi + 1e-9 * st; v += st) out.push(+v.toFixed(10)); return out; }
+function logTicks(d0, d1) {
+  const out = [], a = Math.floor(Math.log10(d0)), b = Math.ceil(Math.log10(d1)), many = b - a > 4;
+  for (let e = a; e <= b; e++) for (const f of many ? [1] : [1, 2, 5]) { const v = f * 10 ** e; if (v >= d0 * 0.999 && v <= d1 * 1.001) out.push(v); }
+  return out;
+}
+function fmtTick(v) { if (v >= 1e4 || (v > 0 && v < 1e-2)) { const e = Math.round(Math.log10(v)); return Math.abs(v - 10 ** e) / v < 1e-6 ? `1e${e}` : v.toExponential(0); } return mi(String(+v.toPrecision(6))); }
+const FONT = '12px "IBM Plex Mono", ui-monospace, Menlo, monospace', FONTS = '11px "IBM Plex Mono", ui-monospace, Menlo, monospace', FONTL = '13px "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif';
+function axes(g, X, Y, o) {
+  const [l, r] = X.p, [b, t] = Y.p, ink = css("--mute"), rule = css("--rule");
+  g.save(); g.lineWidth = 1; g.font = FONT; g.fillStyle = ink;
+  for (const v of o.xt) { const x = X(v); g.strokeStyle = alpha(rule, 0.9); g.beginPath(); g.moveTo(x, t); g.lineTo(x, b); g.stroke(); g.textAlign = "center"; g.textBaseline = "top"; g.fillText(o.xf ? o.xf(v) : fmtTick(v), x, b + 5); }
+  for (const v of o.yt) { const y = Y(v); g.strokeStyle = alpha(rule, 0.9); g.beginPath(); g.moveTo(l, y); g.lineTo(r, y); g.stroke(); g.textAlign = "right"; g.textBaseline = "middle"; g.fillText(o.yf ? o.yf(v) : fmtTick(v), l - 6, y); }
+  g.strokeStyle = rule; g.strokeRect(l, t, r - l, b - t);
+  g.font = FONTL; g.fillStyle = ink;
+  if (o.xl) { g.textAlign = "center"; g.textBaseline = "bottom"; g.fillText(o.xl, (l + r) / 2, g.canvas.height / (Math.min(2, window.devicePixelRatio || 1)) - 2); }
+  if (o.yl) { g.save(); g.translate(12, (t + b) / 2); g.rotate(-Math.PI / 2); g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(o.yl, 0, 0); g.restore(); }
+  g.restore();
+}
+function path(g, xs, ys, X, Y, style) {
+  g.save(); g.strokeStyle = style.c; g.lineWidth = style.w || 1.5; g.setLineDash(style.dash || []); g.lineJoin = "round";
+  g.beginPath(); let on = false;
+  for (let k = 0; k < xs.length; k++) {
+    const yv = ys[k]; if (!Number.isFinite(yv) || (Y.log && yv <= 0)) { on = false; continue; }
+    const x = X(xs[k]), y = Y(yv); if (on) g.lineTo(x, y); else { g.moveTo(x, y); on = true; }
+  }
+  g.stroke(); g.restore();
+}
+function clip(g, X, Y) { g.save(); g.beginPath(); g.rect(X.p[0], Y.p[1], X.p[1] - X.p[0], Y.p[0] - Y.p[1]); g.clip(); }
+
+// ---------- light curve
+function drawLC() {
+  const cv = $("c1"), { g, w, h } = frame(cv, 0.44, 280, 460), s = S.series, P = s.P;
+  const box = { l: 52, r: w - 14, t: 16, b: h - 40 };
+  const X = lin(s.t0, s.t1, box.l, box.r);
+  const iceC = css(ICE_VAR[P.ice]), ink = css("--ink"), mute = css("--mute"), ghost = css("--ghost"), obsC = css("--obs"), acc = css("--accent");
+  const span = (s.t1 - s.t0) / (365.25 * DAY), st = span > 30 ? 5 : span > 12 ? 2 : span > 6 ? 1 : 0.5;
+  const xt = []; for (let y = Math.ceil(yearOf(s.t0) / st) * st; y <= yearOf(s.t1) + 1e-9; y += st) xt.push(msOfYear(y));
+  const xf = (v) => st < 1 ? (Math.abs(yearOf(v) % 1) < 1e-6 ? String(Math.round(yearOf(v))) : fmtD(v).slice(0, 7)) : String(Math.round(yearOf(v)));
+  let Y;
+  const { obs } = parseObs();
+  S.box1 = { X, box };
+  if (!s.el.ok) { msg(g, w, h, "Enter q, e and T of the orbit to draw the light curve."); return; }
+  if (S.view === "mag") {
+    if (!s.el.full) { msg(g, w, h, "Magnitudes need the full orbit (i, Ω, ω). The Afρ growth view works with q, e and T alone."); return; }
+    let lo = Infinity, hi = -Infinity;
+    s.m.forEach((v) => { if (Number.isFinite(v)) { lo = Math.min(lo, v); hi = Math.max(hi, v); } });
+    obs.forEach((o) => { if (o.ms >= s.t0 && o.ms <= s.t1) { lo = Math.min(lo, o.m - o.s); hi = Math.max(hi, o.m + o.s); } });
+    s.mN.forEach((v) => { if (Number.isFinite(v) && v < hi + 3) hi = Math.max(hi, v); });
+    if (!Number.isFinite(lo)) { lo = 10; hi = 20; }
+    const pad = Math.max(0.3, 0.06 * (hi - lo)); lo = Math.floor((lo - pad) * 2) / 2; hi = Math.ceil((hi + pad) * 2) / 2;
+    Y = lin(hi, lo, box.b, box.t);
+    axes(g, X, Y, { xt, xf, yt: linTicks(lo, hi, 6), yl: "magnitude" });
+    clip(g, X, Y);
+    path(g, s.t, s.mN, X, Y, { c: ghost, w: 1.5, dash: [5, 4] });
+    if (s.emp) path(g, s.t, s.mE, X, Y, { c: ink, w: 1.7, dash: [7, 3, 2, 3] });
+    path(g, s.t, s.m, X, Y, { c: iceC, w: 2.4 });
+    const cut = cutMs(), test = [];
+    g.fillStyle = obsC; g.strokeStyle = obsC; g.lineWidth = 1.2;
+    for (const o of obs) {
+      if (o.ms >= cut) test.push(o);
+      if (o.ms < s.t0 || o.ms > s.t1) continue; const x = X(o.ms); g.beginPath(); g.moveTo(x, Y(o.m - o.s)); g.lineTo(x, Y(o.m + o.s)); g.stroke();
+      g.beginPath(); if (o.ms < cut) { g.arc(x, Y(o.m), 3.6, 0, 2 * Math.PI); g.fill(); } else { g.fillStyle = css("--panel"); g.arc(x, Y(o.m), 3.4, 0, 2 * Math.PI); g.fill(); g.stroke(); g.fillStyle = obsC; }
+    }
+    g.restore();
+    let tst = "";
+    if (test.length && Number.isFinite(cut)) {
+      const rms = (f) => Math.sqrt(test.reduce((a, o) => { const gg = ephem(s.el, o.ms), d = o.m - f(gg); return a + d * d; }, 0) / test.length);
+      const rm = rms((gg) => magnitude(gg.r, gg.D, gg.alpha, eta(gg.r, P.ice, P.cz, P.h), P, s.mu).m), re = s.emp ? rms((gg) => empMag(s.emp, gg.r, gg.D)) : NaN;
+      S.forecast = { n: test.length, model: rm, emp: re };
+      tst = ` <span class="key">forecast rms: model ${rm.toFixed(2)}${s.emp ? `, empirical ${re.toFixed(2)}` : ""} mag</span>`;
+    } else S.forecast = null;
+    $("key1").innerHTML = `<span class="key"><span class="sw" style="border-top-color:${iceC}"></span>${ICE_NAME[P.ice]} model</span>` + (s.emp ? ` <span class="key"><span class="sw e"></span>empirical law, <i>n</i> = ${mi(s.emp.n.toFixed(1))}</span>` : "") +
+      ` <span class="key"><span class="sw d"></span>nucleus alone</span> <span class="key"><span class="dot"></span>observed</span>` + (test.length && Number.isFinite(cut) ? ` <span class="key"><span class="ring"></span>after the cut</span>` + tst : "");
+  } else {
+    const ref = refMs(s), r0 = ephem(s.el, ref).r;
+    const series = SCEN.map((sc) => s.r.map((r) => eta(r, sc.x, sc.c, P.h) / eta(r0, sc.x, sc.c, P.h) * (r / r0) ** -1.5));
+    const cur = s.r.map((r) => eta(r, P.ice, P.cz, P.h) / eta(r0, P.ice, P.cz, P.h) * (r / r0) ** -1.5);
+    let lo = Infinity, hi = -Infinity;
+    [cur, ...series].forEach((a) => a.forEach((v) => { if (v > 0 && Number.isFinite(v)) { lo = Math.min(lo, v); hi = Math.max(hi, v); } }));
+    lo = Math.max(lo, 1e-4); hi = Math.min(Math.max(hi, 2), 1e6);
+    lo = 10 ** Math.floor(Math.log10(lo)); hi = 10 ** Math.ceil(Math.log10(hi));
+    Y = logs(lo, hi, box.b, box.t);
+    axes(g, X, Y, { xt, xf, yt: logTicks(lo, hi), yl: "Afρ / Afρ(ref)" });
+    clip(g, X, Y);
+    SCEN.forEach((sc, k) => path(g, s.t, series[k], X, Y, { c: alpha(css(ICE_VAR[sc.x]), 0.55), w: 1.2, dash: sc.c < 1 ? [5, 4] : [] }));
+    path(g, s.t, cur, X, Y, { c: iceC, w: 2.6 });
+    const xr = X(ref); g.strokeStyle = mute; g.setLineDash([2, 3]); g.beginPath(); g.moveTo(xr, box.t); g.lineTo(xr, box.b); g.stroke(); g.setLineDash([]);
+    g.fillStyle = mute; g.font = FONTS; g.textAlign = "left"; g.fillText("ref", xr + 4, box.b - 6);
+    g.restore();
+    $("key1").innerHTML = `<span class="key"><span class="sw" style="border-top-color:${iceC}"></span>chosen ice</span> <span class="key"><span class="sw" style="border-top-color:${ghost}"></span>other ices, subsolar</span> <span class="key"><span class="sw d"></span>isothermal</span>`;
+  }
+  // perihelion, today, date line
+  const vline = (ms, col, dash, label, top) => {
+    if (ms < s.t0 || ms > s.t1) return; const x = X(ms);
+    g.save(); g.strokeStyle = col; g.lineWidth = 1; g.setLineDash(dash); g.beginPath(); g.moveTo(x, box.t); g.lineTo(x, box.b); g.stroke(); g.restore();
+    if (label) { g.save(); g.fillStyle = col; g.font = FONTS; const tw = g.measureText(label).width; g.textAlign = x + tw + 8 > box.r ? "right" : "left"; g.textBaseline = "top"; g.fillText(label, g.textAlign === "left" ? x + 4 : x - 4, box.t + 3 + (top || 0)); g.restore(); }
+  };
+  vline(s.el.Tms, mute, [2, 3], "perihelion", 0);
+  vline(Date.now(), ghost, [], "today", 14);
+  if (S.view === "mag" && Number.isFinite(cutMs())) vline(cutMs(), css("--obs"), [4, 3], "fit | forecast", box.b - box.t - 20);
+  const c = Math.min(Math.max(S.cursor, s.t0), s.t1); S.cursor = c;
+  vline(c, acc, [], "", 0);
+  g.save(); g.fillStyle = acc; g.beginPath(); const xc = X(c); g.moveTo(xc - 6, box.b); g.lineTo(xc + 6, box.b); g.lineTo(xc, box.b - 8); g.fill(); g.restore();
+}
+function msg(g, w, h, text) {
+  g.save(); g.fillStyle = css("--mute"); g.font = '15px "Source Serif 4", Georgia, serif'; g.textAlign = "center"; g.textBaseline = "middle";
+  const words = text.split(" "), lines = [""]; for (const wd of words) { const t = lines[lines.length - 1] + (lines[lines.length - 1] ? " " : "") + wd; if (g.measureText(t).width > w - 60) lines.push(wd); else lines[lines.length - 1] = t; }
+  lines.forEach((ln, k) => g.fillText(ln, w / 2, h / 2 + (k - (lines.length - 1) / 2) * 20)); g.restore();
+}
+function refMs(s) { const v = parseDate($("ref").value); return Number.isFinite(v) ? v : s.t0; }
+
+// ---------- eta and n panels
+function curveR(r0, r1, n) { const out = []; for (let k = 0; k <= n; k++) out.push(r0 * (r1 / r0) ** (k / n)); return out; }
+function drawEta() {
+  const cv = $("c2"), { g, w, h } = frame(cv, 0.68, 230, 360), s = S.series, P = s.P;
+  const box = { l: 46, r: w - 12, t: 12, b: h - 38 };
+  const X = logs(0.3, 50, box.l, box.r), Y = lin(0, 100, box.b, box.t), rs = curveR(0.3, 50, 260);
+  axes(g, X, Y, { xt: [0.3, 1, 3, 10, 30, 50].filter((v) => v <= 50), yt: [0, 25, 50, 75, 100], yf: (v) => v + "%", xl: "distance from the Sun r (au)" });
+  clip(g, X, Y);
+  const rr = s.r.filter(Number.isFinite);
+  if (rr.length) { const a = Math.max(0.3, Math.min(...rr)), b = Math.min(50, Math.max(...rr)); g.fillStyle = alpha(css("--ghost"), 0.16); g.fillRect(X(a), box.t, Math.max(1, X(b) - X(a)), box.b - box.t); }
+  const sel = css(ICE_VAR[P.ice]);
+  const lo = rs.map((r) => 100 * eta(r, P.ice, 0.25, P.h)), hi = rs.map((r) => 100 * eta(r, P.ice, 1, P.h));
+  g.fillStyle = alpha(sel, 0.13); g.beginPath(); rs.forEach((r, k) => k ? g.lineTo(X(r), Y(hi[k])) : g.moveTo(X(r), Y(hi[k]))); for (let k = rs.length - 1; k >= 0; k--) g.lineTo(X(rs[k]), Y(lo[k])); g.fill();
+  for (const x of ["CO", "CO2", "H2O"]) {
+    const ys = rs.map((r) => 100 * eta(r, x, P.cz, P.h)), col = css(ICE_VAR[x]);
+    path(g, rs, ys, X, Y, { c: x === P.ice ? col : alpha(col, 0.7), w: x === P.ice ? 2.6 : 1.4 });
+    const k = ys.findIndex((v) => v < 50);
+    g.fillStyle = col; g.font = FONTL; g.textBaseline = "middle";
+    if (k > 0) { g.textAlign = "left"; g.fillText(ICE_NAME[x], X(rs[k]) + 6, Y(50) - 10); }
+    else { g.textAlign = "right"; g.fillText(ICE_NAME[x], box.r - 6, Y(ys[ys.length - 1]) + 12); }
+  }
+  const rc = ephem(s.el, S.cursor).r;
+  if (rc >= 0.3 && rc <= 50) { const x = X(rc); g.strokeStyle = css("--accent"); g.lineWidth = 1; g.beginPath(); g.moveTo(x, box.t); g.lineTo(x, box.b); g.stroke(); g.fillStyle = sel; g.beginPath(); g.arc(x, Y(100 * eta(rc, P.ice, P.cz, P.h)), 4, 0, 2 * Math.PI); g.fill(); }
+  g.restore();
+}
+function drawN() {
+  const cv = $("c3"), { g, w, h } = frame(cv, 0.68, 230, 360), s = S.series, P = s.P;
+  const box = { l: 40, r: w - 12, t: 12, b: h - 38 };
+  const X = logs(1, 50, box.l, box.r), Y = lin(0, 20, box.b, box.t), rs = curveR(1, 50, 220);
+  axes(g, X, Y, { xt: [1, 2, 5, 10, 20, 50], yt: [0, 5, 10, 15, 20], xl: "distance from the Sun r (au)" });
+  clip(g, X, Y);
+  const mute = css("--mute"), ink = css("--ink");
+  g.strokeStyle = mute; g.setLineDash([2, 3]); g.beginPath(); g.moveTo(box.l, Y(3.5)); g.lineTo(box.r, Y(3.5)); g.stroke(); g.setLineDash([]);
+  g.fillStyle = mute; g.font = FONTS; g.textAlign = "left"; g.textBaseline = "top"; g.fillText("floor 7/2", box.l + 4, Y(3.5) + 3);
+  if (S.nbox) { const b = S.nbox, oc = css("--obs"); g.fillStyle = alpha(oc, 0.22); g.strokeStyle = oc; g.fillRect(X(b.r0), Y(b.n + b.s), X(b.r1) - X(b.r0), Y(b.n - b.s) - Y(b.n + b.s)); g.strokeRect(X(b.r0), Y(b.n + b.s), X(b.r1) - X(b.r0), Y(b.n - b.s) - Y(b.n + b.s)); g.fillStyle = oc; g.textAlign = "left"; g.textBaseline = "middle"; g.fillText("UN271", X(b.r1) + 5, Y(b.n)); }
+  const holt = (r) => 0.40 * r * (Math.log(r) + 1) - 1.78;
+  path(g, curveR(2.5, 10, 60), curveR(2.5, 10, 60).map(holt), X, Y, { c: ink, w: 1.4, dash: [6, 4] });
+  path(g, curveR(10, 15, 20), curveR(10, 15, 20).map(holt), X, Y, { c: alpha(css("--ghost"), 1), w: 1.2, dash: [2, 3] });
+  for (const x of ["CO", "CO2", "H2O"]) {
+    const col = css(ICE_VAR[x]), ys = rs.map((r) => 2 + kSlope(r, x, P.cz, P.h));
+    path(g, rs, ys, X, Y, { c: x === P.ice ? col : alpha(col, 0.7), w: x === P.ice ? 2.6 : 1.4 });
+    let k = ys.findIndex((v) => v > 17); if (k < 0) k = ys.length - 1;
+    g.fillStyle = col; g.font = FONTL; g.textAlign = "right"; g.textBaseline = "middle";
+    const yy = Number.isFinite(ys[k]) ? Y(Math.min(ys[k], 17)) : Y(17); g.fillText(ICE_NAME[x], X(rs[k]) - 6, x === "CO" ? Y(3.5) - 12 : yy);
+  }
+  const rc = ephem(s.el, S.cursor).r;
+  if (rc >= 1 && rc <= 50) { const x = X(rc), nv = 2 + kSlope(rc, P.ice, P.cz, P.h); g.strokeStyle = css("--accent"); g.lineWidth = 1; g.beginPath(); g.moveTo(x, box.t); g.lineTo(x, box.b); g.stroke(); if (nv <= 20) { g.fillStyle = css(ICE_VAR[P.ice]); g.beginPath(); g.arc(x, Y(nv), 4, 0, 2 * Math.PI); g.fill(); } }
+  g.restore();
+}
+
+// ---------- readouts and table
+function readouts() {
+  const s = S.series, P = s.P, el = s.el, cell = (b, v) => `<div><b>${b}</b><span>${v}</span></div>`;
+  if (!el.ok) { $("read").innerHTML = cell("Date", "—"); return; }
+  const g = ephem(el, S.cursor), bal = balance(g.r, P.ice, P.cz, P.h), et = bal.eta, k = kSlope(g.r, P.ice, P.cz, P.h);
+  let mtxt = "—", share = "—";
+  if (el.full) { const mg = magnitude(g.r, g.D, g.alpha, et, P, s.mu); mtxt = mg.m.toFixed(2); share = (100 * mg.nucShare).toFixed(mg.nucShare < 0.01 ? 2 : 1) + " %"; }
+  $("read").innerHTML = cell("Date", fmtD(S.cursor)) + cell('<span class="m">r</span> (au)', g.r.toFixed(2)) + cell('<span class="m">Δ</span> (au)', el.full ? g.D.toFixed(2) : "—") +
+    cell('Phase <span class="m">α</span>', el.full ? g.alpha.toFixed(1) + "°" : "—") + cell('Magnitude <span class="m">m</span>', mi(mtxt)) + cell("Nucleus share", share) +
+    cell(Number.isFinite(P.h) ? "Surface / ice T" : "Surface T", Number.isFinite(P.h) ? `${bal.T.toFixed(0)} / ${bal.Ti.toFixed(0)} K` : bal.T.toFixed(0) + " K") + cell('<span class="m">η<sub>' + ICE_NAME[P.ice] + "</sub></span>", sci(et, 3)) +
+    cell('<span class="m">k</span> (<span class="m">n</span>)', Number.isFinite(k) ? `${k.toFixed(2)} (${(k + 2).toFixed(1)})` : "—") + cell('<span class="m">Afρ</span> (cm)', sci(afrho(s.K, g.r, et), 3));
+}
+function table() {
+  const s = S.series, P = s.P, el = s.el, tb = $("tab").tBodies[0];
+  if (!el.ok) { tb.innerHTML = ""; return; }
+  const g = ephem(el, S.cursor), ref = refMs(s), r0 = ephem(el, ref).r;
+  let best = null; if (S.cmp) for (const sc of SCEN) { const c = S.cmp[sc.x + sc.c]; if (c && (!best || c.score < best.score)) best = c; }
+  tb.innerHTML = SCEN.map((sc) => {
+    const k = kSlope(g.r, sc.x, sc.c, P.h), gr = eta(g.r, sc.x, sc.c, P.h) / eta(r0, sc.x, sc.c, P.h) * (g.r / r0) ** -1.5;
+    const fitc = S.cmp && S.cmp[sc.x + sc.c];
+    let m = "—";
+    if (el.full) { const PP = { ...P, HN: fitc ? fitc.HN : P.HN }, K = fitc ? 10 ** fitc.lk : s.K; m = magnitude(g.r, g.D, g.alpha, eta(g.r, sc.x, sc.c, P.h), PP, muFrom(K, PP)).m.toFixed(2); }
+    const on = sc.x === P.ice && Math.abs(sc.c - P.cz) < 1e-6, isBest = best && fitc === best;
+    const chi = fitc ? (fitc.nu > 0 ? fitc.chi2 / fitc.nu : fitc.chi2).toFixed(fitc.chi2 < 100 ? 2 : 0) + (fitc.nu > 0 ? "" : " (χ²)") : "—";
+    return `<tr data-x="${sc.x}" data-c="${sc.c}" class="${on ? "on" : ""} ${isBest ? "best" : ""}" tabindex="0"><td><span class="chip" style="background:var(${ICE_VAR[sc.x]})"></span>${sc.lab}</td><td>${Number.isFinite(k) ? k.toFixed(2) : "—"}</td><td>${Number.isFinite(k) ? (k + 2).toFixed(1) : "—"}</td><td>× ${sci(gr, 3)}</td><td>${mi(m)}</td><td>${mi(chi)}</td></tr>`;
+  }).join("");
+}
+
+// ---------- fitting
+function fitOne(obs, el, P, x, c, fitH) {
+  const pts = obs.map((o) => { const g = ephem(el, o.ms); return { ...o, r: g.r, D: g.D, al: g.alpha, et: eta(g.r, x, c, P.h) }; });
+  const chi = (lk, HN) => { const PP = { ...P, HN }, mu = muFrom(10 ** lk, PP); let s2 = 0; for (const p of pts) { const d = (p.m - magnitude(p.r, p.D, p.al, p.et, PP, mu).m) / p.s; s2 += d * d; } return s2; };
+  const best1 = (HN) => {
+    let bl = 0, bv = Infinity; for (let lk = -1; lk <= 10; lk += 0.1) { const v = chi(lk, HN); if (v < bv) { bv = v; bl = lk; } }
+    let a = bl - 0.1, b = bl + 0.1; const gr = (Math.sqrt(5) - 1) / 2;
+    for (let k = 0; k < 40; k++) { const c1 = b - gr * (b - a), c2 = a + gr * (b - a); if (chi(c1, HN) < chi(c2, HN)) b = c2; else a = c1; }
+    const lk = (a + b) / 2; return { lk, v: chi(lk, HN) };
+  };
+  if (!fitH) { const r = best1(P.HN); return { lk: r.lk, HN: P.HN, chi2: r.v, nu: pts.length - 1, score: r.v / Math.max(1, pts.length - 1) }; }
+  let bH = P.HN, bv = Infinity, bl = 0; const H0 = Math.max(2, P.HN - 3), H1 = Math.min(22, P.HN + 3);
+  for (let HN = H0; HN <= H1 + 1e-9; HN += 0.1) { const r = best1(HN); if (r.v < bv) { bv = r.v; bH = HN; bl = r.lk; } }
+  let a = bH - 0.1, b = bH + 0.1; const gr = (Math.sqrt(5) - 1) / 2;
+  for (let k = 0; k < 30; k++) { const c1 = b - gr * (b - a), c2 = a + gr * (b - a); if (best1(c1).v < best1(c2).v) b = c2; else a = c1; }
+  const HN = (a + b) / 2, r = best1(HN);
+  return { lk: r.lk, HN, chi2: r.v, nu: pts.length - 2, score: r.v / Math.max(1, pts.length - 2), edge: HN - H0 < 0.15 || H1 - HN < 0.15 };
+}
+function obsForFit() {
+  const el = readOrbit(); const { obs, bad } = parseObs();
+  if (!el.full) return { err: "Fitting needs the full orbit (i, Ω, ω) to know Δ and the phase angle." };
+  if (!obs.length) return { err: "Add photometry first: one line per date with magnitude and error." };
+  const cut = cutMs(), use = obs.filter((o) => o.ms < cut);
+  if (!use.length) return { err: "No points before the “fit only before” date." };
+  return { el, obs: use, bad, cut: Number.isFinite(cut) ? fmtD(cut) : null };
+}
+function doFit() {
+  const f = obsForFit(); if (f.err) return score(f.err, "mid");
+  const P = params(), fitH = $("fith").checked;
+  if (fitH && f.obs.length < 2) return score("Fitting H_N as well needs at least two points.", "mid");
+  const r = fitOne(f.obs, f.el, P, P.ice, P.cz, fitH);
+  $("lk").value = r.lk.toFixed(4); if (fitH) $("hn").value = r.HN.toFixed(2);
+  const PP = params();
+  score(`${ICE_NAME[P.ice]}, ⟨cos ζ⟩ = ${P.cz.toFixed(2)}: K = ${sci(10 ** r.lk, 3)} cm, μ = ${sci(muFrom(10 ** r.lk, PP), 3)}${fitH ? `, H<sub>N</sub> = ${r.HN.toFixed(2)}` : ""}. ` + (r.edge ? `H<sub>N</sub> ran to the edge of its range (±3 mag): these data do not constrain it, so untick “also H<sub>N</sub>”. ` : "") +
+    (r.nu > 0 ? `χ²<sub>ν</sub> = ${(r.chi2 / r.nu).toFixed(2)} for ${f.obs.length} points${f.cut ? ` before ${f.cut}` : ""}.` : `χ² = ${r.chi2.toFixed(2)}: as many parameters as points.`) + (f.bad.length ? ` Skipped line ${f.bad.join(", ")}.` : ""),
+    r.edge || (r.nu > 0 && r.chi2 / r.nu > 3) ? "mid" : "good");
+  update();
+}
+function doCompare() {
+  const f = obsForFit(); if (f.err) return score(f.err, "mid");
+  const P = params(), fitH = $("fith").checked && f.obs.length >= 2; S.cmp = {};
+  for (const sc of SCEN) S.cmp[sc.x + sc.c] = fitOne(f.obs, f.el, P, sc.x, sc.c, fitH);
+  let best = SCEN[0]; for (const sc of SCEN) if (S.cmp[sc.x + sc.c].score < S.cmp[best.x + best.c].score) best = sc;
+  const b = S.cmp[best.x + best.c];
+  score(`Best: ${best.lab}, ` + (b.nu > 0 ? `χ²<sub>ν</sub> = ${(b.chi2 / b.nu).toFixed(2)}` : `χ² = ${b.chi2.toFixed(2)}`) + `. Click a row to use it.`, "good");
+  update();
+}
+function score(html, cls) { const e = $("score"); e.innerHTML = html; e.className = "score " + (cls || ""); }
+
+// ---------- energy budget and SWAN backtest
+const BPRE = { neo: { q: "5.27e30", r: "0.337", rn: "3.5" }, "3i": { q: "4.5e28", r: "1.49", rn: "1.3" } };
+function budget() {
+  const Q = num($("bq").value), r = num($("br").value), RN = num($("brn").value);
+  if (!(Q > 0 && r > 0 && RN > 0)) { $("bout").innerHTML = "Enter Q, r and R<sub>N</sub>."; return; }
+  const qm = qMax(RN, r, "H2O", 1), f = Q / qm, rmin = RN * Math.sqrt(f);
+  $("bout").innerHTML = `Q<sub>max</sub> = ${sci(qm, 3)} s⁻¹ &nbsp;·&nbsp; f = ${f.toPrecision(3)} &nbsp;<span class="pill ${f <= 1 ? "ok" : "no"}">${f <= 1 ? "energy suffices" : "needs another source"}</span><br>smallest nucleus for f ≤ 1: R<sub>N</sub> = ${rmin.toPrecision(3)} km`;
+}
+function drawSwan() {
+  const cv = $("c4"), { g, w, h } = frame(cv, 0.5, 260, 420);
+  const box = { l: 44, r: w - 12, t: 12, b: h - 38 };
+  const X = logs(0.005, 2, box.l, box.r), Y = lin(-10, 4, box.b, box.t);
+  axes(g, X, Y, { xt: [0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2], xf: (v) => String(v), yt: [-10, -8, -6, -4, -2, 0, 2, 4], yf: (v) => mi(String(v)), xl: "perihelion distance q (au)" });
+  clip(g, X, Y);
+  const qs = curveR(0.005, 2, 70), lo = qs.map((q) => envelope(q, 0.25)), hi = qs.map((q) => envelope(q, 1)), mt = qs.map((q) => envelopeMantle(q)[1]);
+  const band = (top, bot, col) => { g.fillStyle = col; g.beginPath(); qs.forEach((q, k) => k ? g.lineTo(X(q), Y(top[k])) : g.moveTo(X(q), Y(top[k]))); for (let k = qs.length - 1; k >= 0; k--) g.lineTo(X(qs[k]), Y(bot[k])); g.fill(); };
+  band(mt, hi, alpha(css("--h2o"), 0.09)); band(hi, lo, alpha(css("--h2o"), 0.24));
+  path(g, qs, hi, X, Y, { c: css("--h2o"), w: 1.2 }); path(g, qs, lo, X, Y, { c: css("--h2o"), w: 1.2, dash: [5, 4] }); path(g, qs, mt, X, Y, { c: css("--h2o"), w: 1.2, dash: [1.5, 3] });
+  const good = css("--good"), mid = css("--warn"), bad = css("--obs"); let n = 0, ok = 0, okm = 0; S.swanPts = [];
+  if (!S.swanEnv) { S.swanEnv = {}; for (const r of SWAN) S.swanEnv[r[1]] = [envelope(r[1], 0.25), envelope(r[1], 1), envelopeMantle(r[1])[1]]; }
+  for (const [name, q, pp, ep, pq, eq] of SWAN) {
+    const [L, H, HM] = S.swanEnv[q];
+    [[pp, ep, 0], [pq, eq, 1]].forEach(([p, e, post]) => {
+      if (p === null || e === null) return;
+      const pass = p + 2 * e >= L && p - 2 * e <= H, passm = p + 2 * e >= L && p - 2 * e <= HM; n++; ok += pass; okm += passm;
+      const col = pass ? good : passm ? mid : bad, x = X(q) + (post ? 3 : -3), y = Y(Math.max(-9.8, p));
+      g.strokeStyle = col; g.fillStyle = col; g.lineWidth = 1;
+      if (p >= -10) { g.beginPath(); g.moveTo(x, Y(Math.max(-10, p - e))); g.lineTo(x, Y(Math.min(4, p + e))); g.stroke(); }
+      g.beginPath();
+      if (p < -10) { g.moveTo(x, box.b - 2); g.lineTo(x - 4, box.b - 9); g.lineTo(x + 4, box.b - 9); g.closePath(); g.fill(); }
+      else if (post) { g.rect(x - 3, y - 3, 6, 6); g.fill(); } else { g.arc(x, y, 3.3, 0, 2 * Math.PI); g.fill(); }
+      S.swanPts.push({ x, y: p < -10 ? box.b - 6 : y, name, q, p, e, post, pass, passm, L, H, HM });
+    });
+  }
+  // medians in bins of q with 68% bootstrap intervals (as in the paper's Fig. 2)
+  g.strokeStyle = css("--ink"); g.fillStyle = css("--panel"); g.lineWidth = 1.8;
+  for (const [qm, m, p16, p84] of SWAN_MED) {
+    const x = X(qm), y = Y(m);
+    g.beginPath(); g.moveTo(x, Y(p16)); g.lineTo(x, Y(p84)); g.stroke();
+    g.beginPath(); g.rect(x - 5, y - 5, 10, 10); g.fill(); g.stroke();
+  }
+  g.restore();
+  $("swansum").innerHTML = `<span class="key"><span class="dot" style="background:${good}"></span>${ok} of ${n} pass</span> <span class="key"><span class="dot" style="background:${mid}"></span>${okm - ok} more with a mantle</span>`;
+}
+function swanHover(ev) {
+  const cv = $("c4"), rc = cv.getBoundingClientRect(), x = ev.clientX - rc.left, y = ev.clientY - rc.top, tip = $("tip");
+  let best = null, bd = 144; for (const p of S.swanPts || []) { const d = (p.x - x) ** 2 + (p.y - y) ** 2; if (d < bd) { bd = d; best = p; } }
+  if (!best) { tip.hidden = true; return; }
+  tip.hidden = false;
+  tip.innerHTML = `${best.name}<br>q = ${best.q.toFixed(3)} au, ${best.post ? "after" : "before"} perihelion<br>p = ${mi(best.p.toFixed(1))} ± ${best.e} · band ${mi(best.L.toFixed(2))} … ${mi(best.H.toFixed(2))}<br>${best.pass ? "passes" : best.passm ? `passes with a dust mantle (top ${mi(best.HM.toFixed(2))})` : best.p > best.HM ? "flatter even with a mantle" : "steeper: the active area must grow"}`;
+  const fr = cv.parentNode.getBoundingClientRect(), tx = ev.clientX - fr.left + 14, ty = ev.clientY - fr.top + 14;
+  tip.style.left = Math.min(tx, fr.width - tip.offsetWidth - 8) + "px"; tip.style.top = Math.min(ty, fr.height - tip.offsetHeight - 8) + "px";
+}
+
+// ---------- wiring
+function labels() {
+  const P = params();
+  $("czo").textContent = P.cz.toFixed(2) + (P.cz === 1 ? " subsolar" : P.cz === 0.25 ? " isothermal" : "");
+  const D = 1329 / Math.sqrt(0.04) * 10 ** (-P.HN / 5);
+  $("hno").textContent = `${P.HN.toFixed(2)} · D ≈ ${D < 10 ? D.toFixed(1) : D.toFixed(0)} km`;
+  $("betao").textContent = P.beta.toFixed(3) + " mag/°";
+  $("hmo").textContent = Number.isFinite(P.h) ? `h = ${P.h < 1 ? P.h.toPrecision(2) : P.h.toPrecision(3).replace(/\.0+$/, "")} W m⁻² K⁻¹` : "none (bare ice)";
+  $("lko").innerHTML = sci(10 ** P.lk, 3) + " cm";
+  $("munote").innerHTML = `μ = ${sci(muFrom(10 ** P.lk, P), 3)} for this aperture. D for p = 0.04.`;
+  const { obs, bad } = parseObs(); $("nobs").textContent = `${obs.length} point${obs.length === 1 ? "" : "s"}${bad.length ? `, ${bad.length} unreadable` : ""}`;
+  document.querySelectorAll(".seg label").forEach(() => {});
+  $("vmag").setAttribute("aria-pressed", S.view === "mag"); $("vafr").setAttribute("aria-pressed", S.view === "afr");
+  $("vmag").disabled = !readOrbit().full;
+}
+let raf = 0;
+function update() { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; labels(); compute(); drawLC(); drawEta(); drawN(); readouts(); table(); }); }
+function applyPreset(key) {
+  const p = PRESETS[key];
+  $("orbitbox").open = key === "custom" || key === "y1";
+  if (!p) { $("cometnote").innerHTML = "Enter the orbit from the JPL Small-Body Database or the MPC, set H<sub>N</sub>, the band and the aperture of your photometry, paste it below and fit."; S.nbox = null; S.cmp = null; update(); return; }
+  const o = p.orbit; $("oq").value = o.q; $("oe").value = o.e; $("oi").value = o.i; $("oO").value = o.Om; $("ow").value = o.w; $("oT").value = o.T;
+  $("ice-" + p.ice).checked = true; $("cz").value = p.cz; $("hm").value = 3; $("hn").value = p.HN; $("beta").value = p.beta; $("lk").value = p.lk.toFixed(4);
+  $("j").value = String(p.j); $("ap").value = p.ap; $("msun").value = p.msun; $("y0").value = p.y0; $("y1").value = p.y1; $("ref").value = p.ref;
+  $("obs").value = p.obs; $("cut").value = p.cut || ""; $("cometnote").innerHTML = p.note; S.view = p.view; S.nbox = p.nbox || null; S.cmp = null;
+  const now = Date.now(), [t0, t1] = windowMs(); S.cursor = p.cursor ? parseDate(p.cursor) : p.view === "mag" && now >= t0 && now <= t1 ? now : parseDate(o.T);
+  score(""); update();
+}
+function cursorFrom(ev) { const b = S.box1; if (!b) return; const rc = $("c1").getBoundingClientRect(); const x = Math.min(Math.max(ev.clientX - rc.left, b.box.l), b.box.r); S.cursor = b.X.inv(x); update(); }
+function init() {
+  $("comet").addEventListener("change", (e) => applyPreset(e.target.value));
+  ["oq", "oe", "oi", "oO", "ow", "oT", "ap", "msun", "y0", "y1", "ref", "j"].forEach((id) => $(id).addEventListener("input", () => { S.cmp = null; update(); }));
+  ["cz", "hn", "beta", "lk", "hm"].forEach((id) => $(id).addEventListener("input", update));
+  document.querySelectorAll('input[name="ice"]').forEach((e) => e.addEventListener("change", update));
+  $("obs").addEventListener("input", () => { S.cmp = null; update(); });
+  $("cut").addEventListener("input", () => { S.cmp = null; update(); }); $("emp").addEventListener("change", update);
+  $("fit").addEventListener("click", doFit); $("cmp").addEventListener("click", doCompare);
+  $("vmag").addEventListener("click", () => { S.view = "mag"; update(); }); $("vafr").addEventListener("click", () => { S.view = "afr"; update(); });
+  const c1 = $("c1"); let drag = false;
+  c1.addEventListener("pointerdown", (e) => { drag = true; c1.setPointerCapture(e.pointerId); cursorFrom(e); });
+  c1.addEventListener("pointermove", (e) => { if (drag) cursorFrom(e); });
+  c1.addEventListener("pointerup", () => { drag = false; }); c1.addEventListener("pointercancel", () => { drag = false; });
+  c1.addEventListener("keydown", (e) => { if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return; e.preventDefault(); const [t0, t1] = windowMs(); S.cursor += (e.key === "ArrowRight" ? 1 : -1) * (t1 - t0) / (e.shiftKey ? 20 : 200); update(); });
+  $("tab").tBodies[0].addEventListener("click", (e) => pick(e.target.closest("tr")));
+  $("tab").tBodies[0].addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(e.target.closest("tr")); } });
+  $("bpre").addEventListener("change", (e) => { const p = BPRE[e.target.value]; if (p) { $("bq").value = p.q; $("br").value = p.r; $("brn").value = p.rn; } budget(); });
+  ["bq", "br", "brn"].forEach((id) => $(id).addEventListener("input", () => { $("bpre").value = "own"; budget(); }));
+  $("c4").addEventListener("pointermove", swanHover); $("c4").addEventListener("pointerleave", () => { $("tip").hidden = true; });
+  const redrawAll = () => { update(); requestAnimationFrame(drawSwan); };
+  if (window.ResizeObserver) { let wd = 0; new ResizeObserver((en) => { const nw = en[0].contentRect.width; if (Math.abs(nw - wd) > 1) { wd = nw; redrawAll(); } }).observe(document.querySelector(".wrap")); } else window.addEventListener("resize", redrawAll);
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", redrawAll);
+  new MutationObserver(redrawAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(redrawAll);
+  $("bq").value = BPRE.neo.q; $("br").value = BPRE.neo.r; $("brn").value = BPRE.neo.rn; budget();
+  applyPreset("un271"); requestAnimationFrame(drawSwan);
+}
+function pick(tr) {
+  if (!tr) return; const x = tr.dataset.x, c = +tr.dataset.c; $("ice-" + x).checked = true; $("cz").value = c;
+  const f = S.cmp && S.cmp[x + c]; if (f) { $("lk").value = f.lk.toFixed(4); $("hn").value = f.HN.toFixed(2); }
+  update();
+}
+init();
