@@ -119,7 +119,7 @@ def run(verbose=True):
     data, rows = load(), []
     pro = [(jd("2021-12-15T00:00"), 18.99, 0.05), (jd("2024-02-15T00:00"), 17.38, 0.03)]   # LOOK, LCO (r' in 6")
     for key, c in COMETS.items():
-        setup = dict(j=1, ap=6.0, msun=-26.93) if key == "un271" else dict(j=0, ap=20000.0, msun=-26.76)
+        setup = dict(j=1, ap=6.0, msun=-26.93) if key == "un271" else dict(j=0, ap=20000.0, msun=-26.762)
         obs = sorted(data[key]) if key != "un271" else pro + sorted(data[key])
         J = np.array([o[0] for o in obs]); m = np.array([o[1] for o in obs]); s = np.array([o[2] for o in obs])
         pts = np.array([ephem(c, v) for v in J])
@@ -155,5 +155,17 @@ def run(verbose=True):
               "; n = 4", sum(r[10] <= 0.75 for r in rows), "of", len(rows))
     return rows
 
+def water_forced(keys=("hb", "a3")):
+    """Forecast rms when the expected ice, subsolar water, is imposed instead of the fitted case (note)."""
+    data = load()
+    for key in keys:
+        c = COMETS[key]; setup = dict(j=0, ap=20000.0, msun=-26.762)
+        obs = sorted(data[key]); J = np.array([o[0] for o in obs])
+        m = np.array([o[1] for o in obs]); s = np.array([o[2] for o in obs])
+        pts = np.array([ephem(c, v) for v in J]); h = len(J) // 2; tr, te = np.arange(h), np.arange(h, len(J))
+        lk, _ = fit_K(c, pts[tr], m[tr], s[tr], "H2O", 1.0, setup)
+        print(f"{c['name']:30s} subsolar water imposed: forecast rms {rms(m[te] - model(c, pts[te], 'H2O', 1.0, lk, setup)):.2f} mag")
+
 if __name__ == "__main__":
     run()
+    water_forced()

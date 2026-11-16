@@ -46,7 +46,7 @@ def to_rprime_6(row, gamma=1.0):
 def scenarios():
     e1, e2 = epoch_values(EP1), epoch_values(EP2); k = slope(e1, e2)
     A0, r0 = e2["afrho"], e2["r"]; et0 = eta(r0, "CO2")
-    return {"K2-like": lambda r: A0 * (r / r0)**-0.48,
+    return {"K2-like": lambda r: A0 * (r / r0)**-0.49,   # effective k of C/2017 K2 (backtest.py B3)
             "CO": lambda r: A0 * (r / r0)**-1.5,
             "CO2": lambda r: A0 * eta(r, "CO2") / et0 * (r / r0)**-1.5,
             "CO2 hemi": lambda r: A0 * eta_hemi(r, "CO2") / eta_hemi(r0, "CO2") * (r / r0)**-1.5,
@@ -95,9 +95,9 @@ if __name__ == "__main__":
     gam = 1 - b / 2.5
     print(f"  {top}, within months: d(O-C)/d lg(aperture) = {b:+.2f} +- {eb:.2f} mag per dex -> coma flux ~ rho^{gam:.2f}")
     for g in (1.0, round(gam, 2)):
-        pts = [p for p in (to_rprime_6(r, g) for r in rows) if p is not None and p[0] >= datetime(2024, 6, 1)]
+        pts_g = [p for p in (to_rprime_6(r, g) for r in rows) if p is not None and p[0] >= datetime(2024, 6, 1)]
         print(f"  conversion with rho^{g}: median O-C " + ", ".join(
-            f"{name} {np.median([m - forecast(t, f) for t, m, o, me in pts]):+.2f}" for name, f in sc.items()))
+            f"{name} {np.median([m - forecast(t, f) for t, m, o, me in pts_g]):+.2f}" for name, f in sc.items()))
     early = [m - forecast(t, sc["CO2"]) for t, m, o, me in pts0 if t < datetime(2025, 4, 1)] if (pts0 := [p for p in (to_rprime_6(r) for r in rows) if p is not None and p[0] >= datetime(2024, 6, 1)]) else []
     late = [m - forecast(t, sc["CO2"]) for t, m, o, me in pts0 if t >= datetime(2025, 4, 1)]
     tt = np.array([(t - datetime(2025, 1, 1)).days / 365.25 for t, m, o, me in pts0]); oc = np.array([m - forecast(t, sc["CO2"]) for t, m, o, me in pts0])
@@ -105,7 +105,22 @@ if __name__ == "__main__":
     s_tr = np.sqrt(np.sum((oc - A @ cf)**2) / (len(oc) - 2) / np.sum((tt - tt.mean())**2))
     print(f"  O-C vs CO2: before 2025 Apr {np.median(early):+.2f} (N = {len(early)}), after {np.median(late):+.2f} (N = {len(late)});"
           f" trend {cf[1]:+.3f} +- {s_tr:.3f} mag/yr")
-    # filtered observers only (MAS01 V and R, Johnson-Cousins)
-    print("  MAS01 (filtered V/R, 21-54\" apertures):")
-    for t, m, o, me in pts:
-        if o == "MAS01": print(f"   {t.date()} {me}  r'(6\") = {m:.2f}   CO2 {forecast(t, sc['CO2']):.2f}  CO {forecast(t, sc['CO']):.2f}")
+    # filtered observer MAS01 (V and R, Johnson-Cousins) for both conversions: the calibration epochs of
+    # 2022 January and 2023 December lie close to the professional values 18.99 (LOOK) and 17.38 (LCO)
+    for g in (1.0, round(gam, 2)):
+        print(f"  MAS01 (filtered V/R, 21-54\" apertures), conversion with rho^{g}:")
+        for r in rows:
+            p = to_rprime_6(r, g)
+            if p is not None and p[2] == "MAS01":
+                t, m, o, me = p
+                print(f"   {t.date()} {me}  r'(6\") = {m:.2f}   CO2 {forecast(t, sc['CO2']):.2f}  CO {forecast(t, sc['CO']):.2f}")
+    # calibration: move the professional values to the dates of the filtered points with the CO2 curve
+    for (tp, mp), tf in (((datetime(2021, 12, 15), 18.99), datetime(2022, 1, 25)),
+                         ((datetime(2024, 2, 15), 17.38), datetime(2023, 12, 9))):
+        exp_ = mp + forecast(tf, sc["CO2"]) - forecast(tp, sc["CO2"])
+        out = []
+        for g in (1.0, round(gam, 2)):
+            v = [p[1] for p in (to_rprime_6(r, g) for r in rows)
+                 if p is not None and p[2] == "MAS01" and p[0].date() == tf.date()]
+            out.append(f"rho^{g}: {min(v) - exp_:+.2f} to {max(v) - exp_:+.2f}")
+        print(f"  calibration {tf.date()}: professional {mp} moved to this date = {exp_:.2f}; MAS01 minus it, " + "; ".join(out))

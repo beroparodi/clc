@@ -9,7 +9,7 @@ B7: local activity index vs the empirical model of Holt et al. (2026).  Needs nu
 import os, sys
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from un271_model import eta, latent, A_B, S0, AMU, afrho_from_mag, balance_mantle
+from un271_model import eta, eta_geom, latent, A_B, S0, AMU, afrho_from_mag, balance_mantle, M_SUN_V
 from swan_data import LONG_PERIOD, SHORT_PERIOD, LATER
 
 M_H2O = 18.015 * AMU; L_W = latent("H2O")
@@ -100,13 +100,14 @@ def fig2_coordinates(ymin=-10.0):
     print(f"% off scale (p < {ymin}): {off}")
 
 def neff(r, x, c, h=1e-3):
-    """Local activity index of a dominant coma, n = 7/2 - d ln(eta)/d ln(r) (note on Holt et al.)."""
-    return 3.5 - (np.log(eta(r*(1+h), x, c)) - np.log(eta(r*(1-h), x, c))) / (np.log(1+h) - np.log(1-h))
+    """Local activity index of a dominant coma, n = 7/2 - d ln(eta)/d ln(r) (note on Holt et al.);
+    c = 1 (subsolar), 0.25 (isothermal) or "hemi" (sunlit hemisphere)."""
+    return 3.5 - (np.log(eta_geom(r*(1+h), x, c)) - np.log(eta_geom(r*(1-h), x, c))) / (np.log(1+h) - np.log(1-h))
 
 def fign_coordinates(nmax=18.0):
     """pgfplots coordinates of Fig. 2 (activity index): n(r) per ice and limit, and Holt et al.'s fit."""
     rs = np.geomspace(1.0, 35.0, 70)
-    for lab, (x, c) in {"co": ("CO", 1), "co2sub": ("CO2", 1), "co2iso": ("CO2", 0.25),
+    for lab, (x, c) in {"co": ("CO", 1), "co2sub": ("CO2", 1), "co2hemi": ("CO2", "hemi"), "co2iso": ("CO2", 0.25),
                         "h2osub": ("H2O", 1), "h2oiso": ("H2O", 0.25)}.items():
         pts = [(r, neff(r, x, c)) for r in rs]
         pts = [(r, n) for r, n in pts if n <= nmax]
@@ -217,7 +218,7 @@ if __name__ == "__main__":
     # (b) HST Afrho (V, 40,000 km) for the long-range hindcast
     D = 15.816; m = 19.33; rho_arcsec = 4e4 / (D * 1.495978707e8) * 206264.8
     from un271_model import afrho_from_mag as afm
-    A_hst = afm(m, 15.874, D, rho_arcsec, msun=-26.74)
+    A_hst = afm(m, 15.874, D, rho_arcsec, msun=M_SUN_V)
     print(f"  (b) HST Afrho(15.87 au) = {A_hst:.0f} cm (V, rho = 40,000 km, alpha 3.7 deg)")
     for kk, lab in ((1.5, "CO constant area"), (k, "measured 2013-17 slope")):
         print(f"      hindcast Afrho(1.79 au) with k={kk:.2f} ({lab}): {A_hst*(15.874/1.79)**kk:.0f} cm;"
@@ -272,6 +273,6 @@ if __name__ == "__main__":
     rs = [2.5, 3, 4, 5, 6, 8, 10, 12, 15]
     print("  r (au)          " + "".join(f"{r:>7}" for r in rs))
     print("  Holt (Fixed-ab) " + "".join(f"{0.40*r*(np.log(r)+1)-1.78:7.1f}" for r in rs))
-    for lab, (x, c) in {"CO subsolar": ("CO", 1), "CO2 subsolar": ("CO2", 1), "CO2 isothermal": ("CO2", 0.25),
-                        "H2O subsolar": ("H2O", 1), "H2O isothermal": ("H2O", 0.25)}.items():
-        print(f"  {lab:16s}" + "".join(f"{neff(r,x,c):7.1f}" for r in rs))
+    for lab, (x, c) in {"CO subsolar": ("CO", 1), "CO2 subsolar": ("CO2", 1), "CO2 hemisphere": ("CO2", "hemi"),
+                        "CO2 isothermal": ("CO2", 0.25), "H2O subsolar": ("H2O", 1), "H2O isothermal": ("H2O", 0.25)}.items():
+        print(f"  {lab:16s}" + "".join(f"{neff(r,x,c):7.2f}" for r in rs))

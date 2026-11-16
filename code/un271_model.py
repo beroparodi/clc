@@ -16,7 +16,8 @@ AU_cm = 1.495978707e13; AU_m = 1.495978707e11
 ARCSEC = np.pi / 180 / 3600
 S0, SIG, KB, AMU = 1361.0, 5.670374e-8, 1.380649e-23, 1.66054e-27
 A_B, EPS = 0.01, 0.9
-M_SUN_R = -26.93                     # Sun, SDSS r' (AB), Willmer 2018
+M_SUN_R = -26.93                     # Sun, SDSS r' (AB), Willmer 2018 (ApJS 236, 47)
+M_SUN_V = -26.762                    # Sun, Johnson V (Willmer 2018: -26.76); gives the 1329 km of Eq. (4)
 ICES = {"H2O": (3.56e12, 6141.667, 18.015), "CO2": (1.23e12, 3167.8, 44.01),
         "CO": (1.26e9, 764.16, 28.01)}  # A_X [Pa], B_X [K], molar mass
 
@@ -39,11 +40,15 @@ def eta(r, x, chi=1.0):
 
 def eta_hemi(r, x, n=48):
     """Sunlit hemisphere of a slowly rotating nucleus: every surface element balances at its own
-    cos(zeta) = mu, so the share of the absorbed power spent on sublimation is
-    eta_hemi = 2 * int_0^1 mu * eta(r, x, mu) dmu (Gauss-Legendre in mu); Eq. (11) keeps its form."""
+    cos(zeta) = chi, so the share of the absorbed power spent on sublimation is
+    eta_hemi = 2 * int_0^1 chi * eta(r, x, chi) dchi (Gauss-Legendre in chi); Eq. (11) keeps its form."""
     t, w = np.polynomial.legendre.leggauss(n)
-    mu, w = 0.5 * (t + 1), 0.5 * w
-    return 2 * float(sum(wi * mi * eta(r, x, mi) for mi, wi in zip(mu, w)))
+    chi, w = 0.5 * (t + 1), 0.5 * w
+    return 2 * float(sum(wi * ci * eta(r, x, ci) for ci, wi in zip(chi, w)))
+
+def eta_geom(r, x, g):
+    """eta for the three geometries of Sec. II B: g = 1 (subsolar), 0.25 (isothermal) or "hemi"."""
+    return eta_hemi(r, x) if g == "hemi" else eta(r, x, g)
 
 def balance_mantle(r, x, chi=1.0, h=np.inf):
     """Ice under a dust mantle of thermal conductance h = kappa/d [W m^-2 K^-1] (note on the

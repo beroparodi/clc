@@ -8,7 +8,7 @@ Numbers in brackets are the results to check against.
        [2.84e6, 5.99e5, 2.27e5 J/kg]
    (b) Check the coefficients against measured points: the triple point of water (273.16 K,
        611.7 Pa), of CO (68.1 K, 15.4 kPa), and CO2 sublimating at 1 atm (194.7 K).
-       [612 Pa, 17.0 kPa, 105.6 kPa]
+       [612 Pa, 16.9 kPa, 105.6 kPa]
 
 2. The energy balance (Eq. 8).
    (a) Solve Eq. (8) for subsolar water ice at 1 au by bisection between 5 and 400 K, and compute
@@ -16,8 +16,8 @@ Numbers in brackets are the results to check against.
    (b) Repeat at 3 au and for CO2 at 10, 16.7 and 19.5 au. [187.8 K, 0.58; eta(CO2) 0.68, 0.29, 0.14]
    (c) Drop the radiation term, then the sublimation term. By how much does each shortcut misjudge
        the CO2 production at 16.7 au? [x3.4 and x17]
-   (d) Average over the sunlit hemisphere of a slow rotator, eta_hemi = 2 int_0^1 mu eta(mu) dmu
-       (Gauss-Legendre or the trapezoidal rule with fine steps near mu = 0). [CO2, 16.7 au: 0.127]
+   (d) Average over the sunlit hemisphere of a slow rotator, eta_hemi = 2 int_0^1 chi eta(chi) dchi
+       (Gauss-Legendre or the trapezoidal rule with fine steps near chi = 0). [CO2, 16.7 au: 0.127]
 
 3. From eta to the activity index (Eqs. 12-13, Fig. 2).
    Compute k = 3/2 - d ln(eta)/d ln r numerically for CO2 at the subsolar point between 19.53 and
