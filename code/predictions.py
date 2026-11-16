@@ -56,6 +56,37 @@ if __name__ == "__main__":
         t = (t.replace(day=1) + timedelta(days=95)).replace(day=1)
     print("%k2like\n" + " ".join(out))
 
+    # robustness of the CO2 inference (Sec. IV A): subsolar point vs sunlit hemisphere of a slow
+    # rotator, constant v, and the thermal parameters A_B, eps of Eq. (8)
+    import un271_model as UM
+    from un271_model import eta_hemi
+    r1, r2 = e1["r"], e2["r"]
+    kof = lambda f: 1.5 + np.log(f(r2) / f(r1)) / np.log(r1 / r2)
+    grow = lambda f: f(20) / f(28) * (20 / 28)**-1.5
+    print("\n== UN271: robustness of the CO2 inference (k between the epochs; growth 28->20 au) ==")
+    for lab, f in (("CO2 subsolar", lambda r: eta(r, "CO2")), ("CO2 sunlit hemisphere", lambda r: eta_hemi(r, "CO2"))):
+        print(f"  {lab:22s}: k = {kof(f):.2f} (v const: {kof(f)+0.5:.2f}); growth 28->20 au = {grow(f):.0f}")
+    for AB, EPS in ((0.04, 0.9), (0.10, 0.9), (0.01, 1.0)):
+        UM.A_B, UM.EPS = AB, EPS
+        f = lambda r: eta(r, "CO2")
+        print(f"  CO2 subsolar, A_B={AB}, eps={EPS}: k = {kof(f):.2f}; growth 28->20 au = {grow(f):.0f}")
+    UM.A_B, UM.EPS = 0.01, 0.9
+    eh0 = eta_hemi(r0, "CO2")
+    hemi = lambda r: A0 * eta_hemi(r, "CO2") / eh0 * (r / r0)**-1.5
+    for d in (datetime(2026, 10, 1), datetime(2031, 1, 25)):
+        g = ephem(d); r, D, a = g["r"], g["D"], g["phase"]; mN = m_nucleus(r, D, a)
+        print(f"  {d.date()}: r' = {add_mags(mN, mag_from_afrho(scen['CO2 dayside, constant area'](r), r, D, 6.0)):.2f} (subsolar), "
+              f"{add_mags(mN, mag_from_afrho(hemi(r), r, D, 6.0)):.2f} (hemisphere)")
+    print(f"  absolute Afrho normalized to Feb 2024, subsolar: {scen['CO2 dayside, constant area'](28)/100:.2f} m at 28 au, "
+          f"{scen['CO2 dayside, constant area'](20)/100:.0f} m at 20 au (observed ~1 m and ~150 m)")
+    print(f"  absolute Afrho, hemisphere: {hemi(28)/100:.2f} m at 28 au, {hemi(20)/100:.0f} m at 20 au")
+    t = datetime(2021, 7, 1); out = []
+    while t <= datetime(2032, 7, 1):
+        g = ephem(t); r, D, a = g["r"], g["D"], g["phase"]; mN = m_nucleus(r, D, a)
+        out.append(f"({t.year + (t.month - 1) / 12 - 2020:.3f},{add_mags(mN, mag_from_afrho(hemi(r), r, D, 6.0)):.3f})")
+        t = (t.replace(day=1) + timedelta(days=95)).replace(day=1)
+    print("%co2hemi\n" + " ".join(out))
+
     print("\n== C/2025 Y1 (ATLAS): q = 2.6 au, T = 2027 Oct 15 (parabolic) ==")
     tp = datetime(2027, 10, 15)
     for d in [datetime(2025, 12, 26), datetime(2026, 2, 15), datetime(2026, 11, 10), datetime(2027, 3, 1),

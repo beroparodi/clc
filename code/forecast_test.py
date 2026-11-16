@@ -99,6 +99,10 @@ def fit_empirical(pts, m, s):
     X = np.column_stack([np.ones(len(m)), 2.5 * np.log10(pts[:, 0])]); y = m - 5 * np.log10(pts[:, 1]); w = 1 / s
     (m0, n), *_ = np.linalg.lstsq(X * w[:, None], y * w, rcond=None); return m0, n
 
+def fit_m0(pts, m, s, n):
+    """Empirical law with a fixed activity index n: only m0 is fitted (one constant, like Eq. (14))."""
+    w = 1 / s**2; return float(np.sum(w * (m - 5 * np.log10(pts[:, 1]) - 2.5 * n * np.log10(pts[:, 0]))) / np.sum(w))
+
 def empirical(pts, m0, n):
     return m0 + 5 * np.log10(pts[:, 1]) + 2.5 * n * np.log10(pts[:, 0])
 
@@ -127,18 +131,28 @@ def run(verbose=True):
             x, chi, lk, _ = best_case(c, pts[tr], m[tr], s[tr], setup)
         m0, n = fit_empirical(pts[tr], m[tr], s[tr])
         f_mod = rms(m[te] - model(c, pts[te], x, chi, lk, setup)); f_emp = rms(m[te] - empirical(pts[te], m0, n))
+        f_fix = {nf: rms(m[te] - empirical(pts[te], fit_m0(pts[tr], m[tr], s[tr], nf), nf)) for nf in (3.5, 4.0)}
         # hindsight: both fitted to all points (case chosen on all points)
         if key == "un271": xa, ca, la = x, chi, fit_K(c, pts, m, s, x, chi, setup)[0]
         else: xa, ca, la, _ = best_case(c, pts, m, s, setup)
         a0, an = fit_empirical(pts, m, s)
         h_mod = rms(m - model(c, pts, xa, ca, la, setup)); h_emp = rms(m - empirical(pts, a0, an))
-        rows.append((c["name"], len(tr), len(te), x + ("" if chi == 1 else " iso"), f_mod, f_emp, n, h_mod, h_emp))
+        rows.append((c["name"], len(tr), len(te), x + ("" if chi == 1 else " iso"), f_mod, f_emp, n, h_mod, h_emp,
+                     f_fix[3.5], f_fix[4.0]))
     if verbose:
         print(f"{'comet':30s} fit test  case       forecast rms: model  empirical (n)   hindsight rms: model  empirical")
         for r in rows:
             print(f"{r[0]:30s} {r[1]:3d} {r[2]:4d}  {r[3]:8s}            {r[4]:5.2f}     {r[5]:5.2f} ({r[6]:4.1f})            {r[7]:5.2f}     {r[8]:5.2f}")
-        w = sum(r[4] < r[5] - 0.05 for r in rows); l = sum(r[4] > r[5] + 0.05 for r in rows)
-        print(f"model better by more than 0.05 mag: {w}, worse: {l}, within 0.05 mag: {len(rows) - w - l}")
+        print(f"\n{'comet':30s} forecast rms: model  n fitted  n = 3.5 fixed  n = 4 fixed")
+        for r in rows:
+            print(f"{r[0]:30s}               {r[4]:5.2f}     {r[5]:5.2f}         {r[9]:5.2f}        {r[10]:5.2f}")
+        for lab, j in (("n fitted (m0, n)", 5), ("n = 3.5 fixed (m0)", 9), ("n = 4 fixed (m0)", 10)):
+            w = sum(r[4] < r[j] - 0.05 for r in rows); l = sum(r[4] > r[j] + 0.05 for r in rows)
+            print(f"model vs empirical law, {lab:18s}: better {w}, equal within 0.05 mag {len(rows) - w - l}, worse {l}")
+        # criterion (iii): forecast within a factor of 2 in flux, i.e. rms <= 0.75 mag
+        print("criterion (iii), rms <= 0.75 mag: model passes", sum(r[4] <= 0.75 for r in rows),
+              "; empirical (n fitted)", sum(r[5] <= 0.75 for r in rows), "; n = 3.5", sum(r[9] <= 0.75 for r in rows),
+              "; n = 4", sum(r[10] <= 0.75 for r in rows), "of", len(rows))
     return rows
 
 if __name__ == "__main__":

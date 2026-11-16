@@ -1,7 +1,8 @@
 """Light-curve model for comet C/2014 UN271 (Bernardinelli-Bernstein).
 Two-component (nucleus + coma) magnitude model with Afrho and an energy-balance
-sublimation share eta_X(r) for CO, CO2 and H2O ice.  Reproduces every number in
-the accompanying paper.  Requires numpy and scipy."""
+sublimation share eta_X(r) for CO, CO2 and H2O ice (subsolar, sunlit hemisphere, isothermal).
+Reproduces the numbers of Secs. II and IV A; backtest.py, predictions.py, cobs_un271.py and
+forecast_test.py reproduce the rest.  Requires numpy and scipy."""
 import os, sys
 import numpy as np
 from scipy.optimize import brentq
@@ -35,6 +36,14 @@ def balance(r, x, chi=1.0):
 
 def eta(r, x, chi=1.0):
     return balance(r, x, chi)[2]
+
+def eta_hemi(r, x, n=48):
+    """Sunlit hemisphere of a slowly rotating nucleus: every surface element balances at its own
+    cos(zeta) = mu, so the share of the absorbed power spent on sublimation is
+    eta_hemi = 2 * int_0^1 mu * eta(r, x, mu) dmu (Gauss-Legendre in mu); Eq. (11) keeps its form."""
+    t, w = np.polynomial.legendre.leggauss(n)
+    mu, w = 0.5 * (t + 1), 0.5 * w
+    return 2 * float(sum(wi * mi * eta(r, x, mi) for mi, wi in zip(mu, w)))
 
 def balance_mantle(r, x, chi=1.0, h=np.inf):
     """Ice under a dust mantle of thermal conductance h = kappa/d [W m^-2 K^-1] (note on the

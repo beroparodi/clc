@@ -1,12 +1,13 @@
-"""The six comets of Parodi (2013) in the energy-balance framework of the paper.
-(1) Energy budget of Eq. (4): implied active fraction f.
+"""Supplementary exploration (not used for numbers in the paper): the six comets of the earlier
+model, Parodi (2013), in the energy-balance framework of the paper.
+(1) Energy budget, Eq. (11): implied active fraction f.
 (2) Independent water rates from the Jorda et al. (2008) relation.
-(3) Effective activity index n_eff(r) of the 2013 fits vs. energy-balance prediction.
-Standalone: needs only numpy and scipy (Appendix C of the paper)."""
+(3) Effective activity index n_eff(r) of the 2013 fits vs. the energy-balance prediction.
+Tables 1 and 2 below are printed for readers of the 2013 paper.  Standalone: numpy and scipy."""
 import numpy as np
 from scipy.optimize import brentq
 
-# --- surface energy balance (same as un271_model.py, Eqs. 6-8 of the paper) ---
+# --- surface energy balance (same as un271_model.py, Eqs. (8)-(10) of the paper) ---
 S0, SIG, KB, AMU = 1361.0, 5.670374e-8, 1.380649e-23, 1.66054e-27
 A_B, EPS = 0.01, 0.9
 ICES = {"H2O": (3.56e12, 6141.667, 18.015), "CO2": (1.23e12, 3167.8, 44.01),
@@ -52,7 +53,7 @@ def n_pred(r, chi=1.0, slope=1/(2.5*0.2453)):
     return slope*(2 - dln_eta(r, chi))
 
 print("Jorda flux-production exponent:", 1/(2.5*0.2453))
-print("\nTable C1: energy budget and water rates at perihelion")
+print("\nTable 1: energy budget and water rates at perihelion")
 for c,ph,m00,mu,nu,qt,qc,dq,mq,R in C:
     if ph=="post": continue
     mx = mmax(R,qc); e4 = eq4(R,qc,nu); mh,Q,mj = jorda(mq,dq)
@@ -62,7 +63,7 @@ for c,ph,m00,mu,nu,qt,qc,dq,mq,R in C:
 for c,ph,m00,mu,nu,qt,qc,dq,mq,R in C:
     if ph!="post": continue
     mx=mmax(R,qc); e4=eq4(R,qc,nu); print(f"{c} post: Eq4={e4/1e3:.2f} t/s f4={e4/mx:.3f}")
-print("\nTable C2: effective activity index")
+print("\nTable 2: effective activity index")
 for c,ph,m00,mu,nu,qt,qc,dq,mq,R in C:
     print(f"{c:13s}{ph:5s} n_eff(q)={n_eff(qc,mu,nu):5.2f} n_eff(1)={n_eff(1,mu,nu):5.2f} n_eff(2)={n_eff(2,mu,nu):5.2f} n_eff(3)={n_eff(3,mu,nu):5.2f}"
           f" | pred(q) Jorda={n_pred(qc):.2f} lin={n_pred(qc,slope=1):.2f} iso={n_pred(qc,0.25):.2f}")
@@ -77,7 +78,7 @@ for c,ph,m00,mu,nu,qt,qc,dq,mq,R in C:
 # ---- LaTeX rows ---------------------------------------------------------------
 from scipy.optimize import brentq
 printed = {"Hale-Bopp":"940","Pan-STARRS":"120","Hyakutake":"130","Halley":"200","Swift-Tuttle":"30","Tempel 2":"$<0.2$"}
-print("\n% Table C1 rows")
+print("\n% Table 1 rows")
 for c,ph,m00,mu,nu,qt,qc,dq,mq,R in C:
     if c=="Tempel 2" and ph=="pre": continue
     if ph=="pre" and c in("Halley","Swift-Tuttle"): pass
@@ -86,7 +87,7 @@ for c,ph,m00,mu,nu,qt,qc,dq,mq,R in C:
     qs=f"{qc:.3f}" + ("$^a$" if qc!=qt else "")
     name=c+(" (post)" if c=="Tempel 2" else "")
     print(f"{name} & {qs} & {R:g} & {eta(qc,'H2O'):.2f} & {mx/1e3:.1f} & {printed[c]} & {e4/1e3:.{0 if e4>1e4 else 1}f} & {mj/1e3:.1f} & {e4/mx:.2f} & {mj/mx:.2f} \\\\")
-print("\n% Table C2 rows")
+print("\n% Table 2 rows")
 def r_floor(m00,mu,nu,H):
     if m00<=H: return None
     target=10**(0.4*(m00-H))-1

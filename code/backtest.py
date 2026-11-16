@@ -62,19 +62,22 @@ def tally(sel):
 
 BINS = ((0, .3), (.3, .6), (.6, .9), (.9, 1.1), (1.1, 1.4), (1.4, 1.9))
 
-def binned_medians(seed=1, ndraw=10000):
-    """Median exponent in bins of q with a 68% bootstrap interval (squares in Fig. 2)."""
-    P = np.array([(r[2], p) for r in rows for p in (r[3], r[5]) if p is not None])
+def binned_medians(seed=1, ndraw=10000, sel=None):
+    """Median exponent in bins of q with a 68% bootstrap interval (squares in Fig. 3);
+    sel: optional set of classes ("LP", "SP", "LT") to restrict the population."""
+    P = np.array([(r[2], p) for r in rows if sel is None or r[1] in sel for p in (r[3], r[5]) if p is not None])
     rng = np.random.default_rng(seed); out = []
     for a, b in BINS:
-        sel = P[(P[:, 0] >= a) & (P[:, 0] < b)]
+        sel_ = P[(P[:, 0] >= a) & (P[:, 0] < b)]
+        if len(sel_) == 0: out.append((a, b, 0, np.nan, np.nan, np.nan, np.nan)); continue
+        sel = sel_
         boot = np.median(rng.choice(sel[:, 1], (ndraw, len(sel))), axis=1)
         out.append((a, b, len(sel), np.exp(np.log(sel[:, 0]).mean()), np.median(sel[:, 1]),
                     np.percentile(boot, 16), np.percentile(boot, 84)))
     return out
 
 def fig2_coordinates(ymin=-10.0):
-    """pgfplots coordinates of Fig. 2: band edges, mantle edge, exponents, binned medians."""
+    """pgfplots coordinates of Fig. 3 (p-q diagram): band edges, mantle edge, exponents, binned medians."""
     qs = np.concatenate([np.geomspace(0.005, 0.1, 6), np.linspace(0.15, 1.85, 35)])
     lines = {"sub": [], "iso": [], "mantle": []}
     for q in qs:
@@ -84,20 +87,37 @@ def fig2_coordinates(ymin=-10.0):
     for k, v in lines.items():
         print(f"%{k}\n" + " ".join(f"({q:.4f},{p:.3f})" for q, p in v))
     off = 0
-    for k, (ip, ie) in (("pre", (3, 4)), ("post", (5, 6))):
-        pts = []
-        for r in rows:
-            if r[ip] is None: continue
-            if r[ip] < ymin: off += 1; continue
-            pts.append(f"({r[2]:.4f},{r[ip]:.2f}) +- (0,{r[ie]:.2f})")
-        print(f"%{k}\n" + " ".join(pts))
+    for pop, cls in (("lp", ("LP", "LT")), ("sp", ("SP",))):
+        for k, (ip, ie) in (("pre", (3, 4)), ("post", (5, 6))):
+            pts = []
+            for r in rows:
+                if r[1] not in cls or r[ip] is None: continue
+                if r[ip] < ymin: off += 1; continue
+                pts.append(f"({r[2]:.4f},{r[ip]:.2f}) +- (0,{r[ie]:.2f})")
+            print(f"%{k}_{pop}\n" + " ".join(pts))
     print("%medians\n" + " ".join(f"({qg:.3f},{m:.2f}) += (0,{b84 - m:.2f}) -= (0,{m - b16:.2f})"
                                    for a, b, n, qg, m, b16, b84 in binned_medians()))
     print(f"% off scale (p < {ymin}): {off}")
 
+def neff(r, x, c, h=1e-3):
+    """Local activity index of a dominant coma, n = 7/2 - d ln(eta)/d ln(r) (note on Holt et al.)."""
+    return 3.5 - (np.log(eta(r*(1+h), x, c)) - np.log(eta(r*(1-h), x, c))) / (np.log(1+h) - np.log(1-h))
+
+def fign_coordinates(nmax=18.0):
+    """pgfplots coordinates of Fig. 2 (activity index): n(r) per ice and limit, and Holt et al.'s fit."""
+    rs = np.geomspace(1.0, 35.0, 70)
+    for lab, (x, c) in {"co": ("CO", 1), "co2sub": ("CO2", 1), "co2iso": ("CO2", 0.25),
+                        "h2osub": ("H2O", 1), "h2oiso": ("H2O", 0.25)}.items():
+        pts = [(r, neff(r, x, c)) for r in rs]
+        pts = [(r, n) for r, n in pts if n <= nmax]
+        print(f"%{lab}\n" + " ".join(f"({r:.3f},{n:.2f})" for r, n in pts))
+    print("%holt\n" + " ".join(f"({r:.2f},{0.40*r*(np.log(r)+1)-1.78:.2f})" for r in np.linspace(2.5, 10.5, 17)))
+
 if __name__ == "__main__":
     if sys.argv[1:] == ["fig2"]:
         fig2_coordinates(); sys.exit()
+    if sys.argv[1:] == ["fign"]:
+        fign_coordinates(); sys.exit()
     print("== B1: SWAN exponents vs constant-area envelope (2 sigma) ==")
     for lab, sel in [("long-period", [r for r in rows if r[1] == "LP"]),
                      ("short-period", [r for r in rows if r[1] == "SP"]),
@@ -147,7 +167,31 @@ if __name__ == "__main__":
         nr = sum(bool(judge(p, e, *envelope(q, f(q)))) for q, p, e, lo, hi in obs)
         print(f"  r2 = {lab:15s}: {nr}/{len(obs)} pass ({100*nr/len(obs):.0f}%)")
 
+    # the trend with q by population: short-period (SP) vs long-period and later comets (LP, LT)
+    from scipy.stats import mannwhitneyu
+    for lab, cl in (("long-period + later", ("LP", "LT")), ("long-period, survey", ("LP",)), ("short-period", ("SP",))):
+        print(f"  medians by q bin, {lab}: " + "; ".join(f"{a:.1f}-{b:.1f}: {m:.2f} (N={n})"
+              for a, b, n, qg, m, b16, b84 in binned_medians(sel=set(cl)) if n))
+    for lab, cl in (("all", ("LP", "SP", "LT")), ("long-period + later", ("LP", "LT")), ("survey only", ("LP", "SP"))):
+        inner = [p for r in rows if r[1] in cl and r[2] < 0.9 for p in (r[3], r[5]) if p is not None]
+        outer = [p for r in rows if r[1] in cl and r[2] >= 1.1 for p in (r[3], r[5]) if p is not None]
+        print(f"  Mann-Whitney q<0.9 vs q>=1.1 ({lab}): N = {len(inner)}, {len(outer)}; "
+              f"medians {np.median(inner):.2f}, {np.median(outer):.2f}; p (one-sided) = "
+              f"{mannwhitneyu(inner, outer, alternative='greater').pvalue:.3f}")
+    # criterion (ii): active fraction of the projected area (subsolar, the most generous case) at q
+    print("  criterion (ii), f = Q(q) / Q_max(q) with Q_max from Eq. (11), subsolar, f_X = 1:")
+    nfail = set()
+    for name, q, Qa, pp, ep, Qb, pq, eq, rN, AFa, AFb in SHORT_PERIOD:
+        if rN is None: continue
+        Qmax = np.pi * (rN * 1e3)**2 * F1 / q**2 * eta(q, "H2O") / L_W / M_H2O
+        fs = [Q1 * q**p / Qmax for Q1, p in ((Qa, pp), (Qb, pq)) if Q1 is not None and p is not None]
+        if fs and max(fs) > 1:
+            nfail.add(name.split(" (")[0]); print(f"    {name:38s} rN = {rN} km: f = " + ", ".join(f"{f:.1f}" for f in fs))
+    print(f"    comets with f > 1: {len(nfail)}: {', '.join(sorted(nfail))}")
+
     print("\n== B2: active fractions (isothermal, 4 pi rN^2) recomputed vs Combi ==")
+    # Combi et al. normalize to a different reference sublimation rate, hence a constant ratio (5.13);
+    # 46P differs by a further factor 4: Combi's table implies a radius of 1.2 km, we use 0.6 km.
     Ziso = eta(1.0, "H2O", 0.25) * F1 * 0.25 / L_W / M_H2O       # molecules m^-2 s^-1
     print(f"  Z_iso(1 au) = {Ziso/1e4:.3e} molecules cm^-2 s^-1")
     ratios = []
@@ -225,8 +269,6 @@ if __name__ == "__main__":
         print(f"  observed, {g:5s}   " + "".join(f"{x:12.2f}" for x in v))
 
     print("\n== B7: local activity index n_eff = 7/2 - dln(eta)/dln(r) vs Holt et al. (2026) Hab fit ==")
-    def neff(r, x, c, h=1e-3):
-        return 3.5 - (np.log(eta(r*(1+h), x, c)) - np.log(eta(r*(1-h), x, c))) / (np.log(1+h) - np.log(1-h))
     rs = [2.5, 3, 4, 5, 6, 8, 10, 12, 15]
     print("  r (au)          " + "".join(f"{r:>7}" for r in rs))
     print("  Holt (Fixed-ab) " + "".join(f"{0.40*r*(np.log(r)+1)-1.78:7.1f}" for r in rs))
