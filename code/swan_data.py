@@ -88,8 +88,8 @@ SHORT_PERIOD = [
 
 # Exponents published after the 2019 survey, same form Q = Q1 r^p (name, q [au], p_pre, err_pre,
 # p_post, err_post).  SOHO/SWAN: Combi et al., "Water production rates from SOHO/SWAN observations
-# of six comets: 2017-2020" (arXiv:2105.06565; C/2019 U6 has no uncertainties and is left out,
-# C/2020 F8 and C/2019 Y4 have no fits) and Combi et al. 2021, ApJL (C/2020 F3).  3I/ATLAS: Tan
+# of six comets: 2017-2020" (Icarus 365, 114509 (2021); C/2019 U6 has no uncertainties and is left out,
+# C/2020 F8 and C/2019 Y4 have no fits) and Combi et al. 2021, ApJL 907, L38 (C/2020 F3).  3I/ATLAS: Tan
 # et al. 2026 (arXiv:2601.15443), SWAN after perihelion, SWAN, Nancay, SPHEREx and Swift before.
 LATER = [
     ("C/2015 V2 (Johnson)", 1.637, -9.8, 0.6, -11.3, 1.7),
