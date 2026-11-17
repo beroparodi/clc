@@ -15,6 +15,12 @@ is fitted (m0 and n) by weighted least squares.  Both then forecast the second h
 An ice "switches on" within the fitted half when the kept case gives a local activity index
 n = 7/2 - d ln(eta)/d ln(r) above 4.5 at some point of that half (Sec. II C); this flag was fixed
 before the forecasts of the 25-comet sample were computed.
+Two ices (added after the one-ice test; design fixed before its forecasts were computed): a volatile ice
+V and water W share one heat spread and act on separate patches, Afrho = (K_V eta_V + K_W eta_W) r^-3/2,
+with K_V, K_W >= 0; the pairs are CO + H2O (subsolar and isothermal water), CO2 + H2O subsolar and
+CO2 + H2O isothermal; both constants and the pair are fitted on the first half (two constants, like
+Eq. (1) with m0 and n).  Whole apparitions: one ice with one mu, and the same ice with one mu before and
+one after perihelion (the change of the active area).
 C/2014 UN271 as in Sec. IV A: CO2 at the subsolar point with K from the 2024 LCO point, the empirical
 law through the two professional points, tested on the COBS monthly medians (r' in 6").
 Total magnitudes of the other comets are compared in a fixed aperture of 20 000 km (j = 0) with
@@ -141,6 +147,32 @@ def fit_K(c, pts, m, s, x, chi, setup):
         else: a = c1
     lk = (a + b) / 2; return lk, f(lk)
 
+PAIRS = [("CO", 1.0, "H2O", 1.0), ("CO", 1.0, "H2O", 0.25), ("CO2", 1.0, "H2O", 1.0), ("CO2", 0.25, "H2O", 0.25)]
+
+def model2(c, pts, pair, KV, KW, setup, etas=None):
+    """Two ices on separate patches: Afrho = (K_V eta_V + K_W eta_W) r^-3/2 in Eq. (14)."""
+    xv, cv, xw, cw = pair
+    HN, beta, j, ap, msun = c["HN"], 0.04, setup["j"], setup["ap"], setup["msun"]
+    conv = (ap * ARCSEC / (4 * AU_CM) if j == 1 else ap * 1e5 / (4 * AU_CM**2)) * 10**(0.4 * (HN - msun))
+    r, D, al = pts[:, 0], pts[:, 1], pts[:, 2]
+    ev, ew = etas if etas is not None else (np.array([eta(rv, xv, cv) for rv in r]), np.array([eta(rv, xw, cw) for rv in r]))
+    ph = al * beta
+    return HN + 5 * np.log10(r * D) + ph - 2.5 * np.log10(1 + conv * (KV * ev + KW * ew) * r**-1.5 * D**j * 10**(0.4 * ph))
+
+def fit2(c, pts, m, s, setup):
+    """Best pair and constants K_V, K_W >= 0 by weighted least squares in magnitude (on the given points)."""
+    from scipy.optimize import least_squares
+    best = None
+    for pair in PAIRS:
+        lv, _ = fit_K(c, pts, m, s, pair[0], pair[1], setup); lw, _ = fit_K(c, pts, m, s, pair[2], pair[3], setup)
+        etas = (np.array([eta(rv, pair[0], pair[1]) for rv in pts[:, 0]]), np.array([eta(rv, pair[2], pair[3]) for rv in pts[:, 0]]))
+        for u0, v0 in ((1.0, 1e-3), (1e-3, 1.0), (0.5, 0.5)):
+            f = lambda q: (m - model2(c, pts, pair, q[0] * 10**lv, q[1] * 10**lw, setup, etas)) / s
+            res = least_squares(f, [u0, v0], bounds=([0, 0], [np.inf, np.inf]), x_scale=[1, 1])
+            c2 = float(np.sum(res.fun**2))
+            if best is None or c2 < best[3]: best = (pair, res.x[0] * 10**lv, res.x[1] * 10**lw, c2)
+    return best
+
 def fit_empirical(pts, m, s):
     X = np.column_stack([np.ones(len(m)), 2.5 * np.log10(pts[:, 0])]); y = m - 5 * np.log10(pts[:, 1]); w = 1 / s
     (m0, n), *_ = np.linalg.lstsq(X * w[:, None], y * w, rcond=None); return m0, n
@@ -184,9 +216,22 @@ def run(verbose=True):
         else: xa, ca, la, _ = best_case(c, pts, m, s, setup)
         a0, an = fit_empirical(pts, m, s)
         h_mod = rms(m - model(c, pts, xa, ca, la, setup)); h_emp = rms(m - empirical(pts, a0, an))
+        # two ices, fitted on the first half (C/2014 UN271: as for one ice, from its two professional points)
+        if key == "un271": f2, pair2, kv2, kw2 = f_mod, (x, chi, "H2O", chi), 10**lk, 0.0
+        else:
+            pair2, kv2, kw2, _ = fit2(c, pts[tr], m[tr], s[tr], setup)
+            f2 = rms(m[te] - model2(c, pts[te], pair2, kv2, kw2, setup))
+        # whole apparition with one mu before and one after perihelion (same ice as the one-mu fit)
+        jj = np.array([o[0] for o in obs]); bpre, bpost = jj < c["Tp"], jj >= c["Tp"]
+        if bpre.sum() >= 3 and bpost.sum() >= 3:
+            lpre, _ = fit_K(c, pts[bpre], m[bpre], s[bpre], xa, ca, setup); lpost, _ = fit_K(c, pts[bpost], m[bpost], s[bpost], xa, ca, setup)
+            mm = np.where(bpre, model(c, pts, xa, ca, lpre, setup), model(c, pts, xa, ca, lpost, setup))
+            h_two, ratio = rms(m - mm), 10**(lpost - lpre)
+        else: h_two, ratio = np.nan, np.nan
         n_max = max(n_local(rv, x, chi) for rv in pts[tr, 0])
         rows.append((c["name"], len(tr), len(te), x + ("" if chi == 1 else " iso"), f_mod, f_emp, n, h_mod, h_emp,
-                     f_fix[3.5], f_fix[4.0], n_max, n_max > N_SWITCH))
+                     f_fix[3.5], f_fix[4.0], n_max, n_max > N_SWITCH, f2, pair2, kv2, kw2, h_two, ratio,
+                     xa + ("" if ca == 1 else " iso")))
     if verbose:
         print(f"{'comet':30s} fit test  case     n_max switch  forecast rms: model  n fitted (n)  n = 3.5  n = 4   hindsight: model  emp.")
         for r in rows:
@@ -208,6 +253,22 @@ def run(verbose=True):
         for lab, j in (("n fitted", 5), ("n = 3.5", 9)):
             u = mannwhitneyu([r[j] - r[4] for r in on], [r[j] - r[4] for r in off], alternative="greater")
             print(f"gain over {lab}: switch-on comets vs the rest, one-sided Mann-Whitney p = {u.pvalue:.3f}")
+        print(f"\ntwo ices (K_V, K_W >= 0, pair chosen on the first half)")
+        print(f"{'comet':30s} pair                  K_W/K_V   forecast rms: two ices  one ice  n fitted  n = 3.5")
+        for r in rows:
+            pr = r[14]; lab = f"{pr[0]}{'' if pr[1] == 1 else ' iso'} + {pr[2]}{'' if pr[3] == 1 else ' iso'}"
+            print(f"{r[0]:30s} {lab:20s} {r[16] / r[15] if r[15] > 0 else np.inf:9.3g}   {r[13]:5.2f}   {r[4]:5.2f}   {r[5]:5.2f}   {r[9]:5.2f}")
+        for grp, sel in (("all 25", rows), ("switch-on", on), ("no switch-on", off)):
+            for lab, j in (("one ice", 4), ("n fitted", 5), ("n = 3.5", 9)):
+                w = sum(r[13] < r[j] - 0.05 for r in sel); l = sum(r[13] > r[j] + 0.05 for r in sel)
+                p = binomtest(w, w + l, 0.5, alternative="greater").pvalue if w + l else float("nan")
+                print(f"  {grp:12s} two ices vs {lab:8s}: better {w}, equal {len(sel) - w - l}, worse {l}; sign test p = {p:.3f}; "
+                      f"median gain {float(np.median([r[j] - r[13] for r in sel])):+.2f} mag")
+        print(f"\nwhole apparitions (hindsight rms): one mu, mu before/after perihelion, empirical law; mu_post/mu_pre")
+        for r in rows:
+            print(f"{r[0]:30s} {r[19]:8s} {r[7]:5.2f}  {r[17]:5.2f}  {r[8]:5.2f}   {r[18]:7.3g}")
+        rt = [r[18] for r in rows if np.isfinite(r[18])]
+        print(f"mu_post/mu_pre: median {np.median(rt):.2f}, range {min(rt):.2f}-{max(rt):.2f}, below 1 for {sum(v < 1 for v in rt)} of {len(rt)}")
     return rows
 
 def water_forced(keys=("hb", "a3")):

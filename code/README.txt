@@ -19,7 +19,8 @@ there. EXERCISES.txt suggests how to use the code and the data in a course.
                            C/2022 E3 (Combi et al. 2025) and our fits to them
   forecast_test.py         Forecasts of Eq. (14) against the empirical law, Eq. (1), for 25
                            COBS light curves (Sec. III C and its note), with the switch-on flag
-                           and the comparison of flagged comets with the rest: fit on the first half,
+                           and the comparison of flagged comets with the rest, and with two ices
+                           (CO or CO2 + water, both constants fitted): fit on the first half,
                            forecast rms on the second half, against Eq. (1) with n fitted and
                            with n fixed at 3.5 and 4; criterion (iii); hindsight fits; forecasts
                            with subsolar water imposed (C/1995 O1, C/2023 A3)
@@ -36,6 +37,10 @@ there. EXERCISES.txt suggests how to use the code and the data in a course.
                            model, Parodi (2013) (standalone)
   cobs/un271_cobs.csv      The COBS records of C/2014 UN271 (COBS Comet Observation Database,
                            https://cobs.si; licensed CC BY-NC-SA 4.0, not CC BY)
+  whole_apparitions.py     Whole-apparition fits (Sec. III C, Fig. 4): one mu, one mu before and one
+                           after perihelion (mu_post/mu_pre), and Eq. (1); writes
+                           whole_apparitions.pdf, the figure for all 25 comets
+  whole_apparitions.pdf    That figure
   bin_cobs.py              The binning rule of the forecast test; --fetch downloads the COBS
                            records of all its comets but C/2014 UN271 (internet needed)
   cobs/cobs_lightcurves.txt  Binned COBS light curves of the 25 comets (median per bin;
@@ -48,7 +53,8 @@ Usage (running times on a laptop):
        python backtest.py fign        (coordinates of Fig. 2, the activity index)
        python predictions.py          (seconds; prints the coordinates of the hemisphere curve of Fig. 4)
        python cobs_un271.py           (seconds)
-       python forecast_test.py        (about a minute)
+       python forecast_test.py        (about three minutes)
+       python whole_apparitions.py    (about a minute; fig4 prints the coordinates of Fig. 4)
        python earlier_model_revisited.py
 
 The binned light curves were made from COBS records retrieved on 2026 November 17 (C/2014 UN271:

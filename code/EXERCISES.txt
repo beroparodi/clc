@@ -41,7 +41,12 @@ Numbers in brackets are the results to check against.
        the brightest of a given year), bin them with fetch() and bin_records() of bin_cobs.py and
        repeat (a) and (b). Does the model win where its ice switches on (local n above 4.5 on the
        fitted half), as for 8 of the 10 such comets of the paper? Why does the rule come first?
-   (d) Before the next observing season of C/2014 UN271 or C/2025 Y1, write down the forecast of
+   (d) Fit the whole light curve with one mu, then with one mu before and one after perihelion
+       (whole_apparitions.py). What does mu_post/mu_pre say about the active area? Compare with the
+       slopes before and after perihelion of Lacerda et al. (2025).
+   (e) Add water as a second ice with its own constant and repeat the forecast of (a). Why does the
+       forecast get worse when the first half lies far from the Sun?
+   (f) Before the next observing season of C/2014 UN271 or C/2025 Y1, write down the forecast of
        each case in Sec. IV and check it against your own photometry afterwards.
 
 6. Criteria (Sec. III).
