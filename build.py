@@ -9,7 +9,7 @@ model = (src / "model.js").read_text()
 cobs, key = {}, None
 for line in (here / "data" / "cobs_lightcurves.txt").read_text().splitlines():
     if line.startswith("#"): key = line[1:].strip(); cobs[key] = []
-    elif line.strip(): cobs[key].append(line.strip())
+    elif line.strip() and not line.startswith("%"): cobs[key].append(line.strip())
 import json
 code = model + "\n" + (src / "swan.js").read_text() + "\nconst COBS = " + json.dumps({k: "\n".join(v) for k, v in cobs.items()}) + ";\n"
 page = page.replace("/*MODEL*/", code).replace("/*UI*/", (src / "ui.js").read_text())

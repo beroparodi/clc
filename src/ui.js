@@ -22,7 +22,7 @@ const PRESETS = {
   },
   y1: {
     orbit: { q: "2.601924069", e: "0.999552254", i: "14.55698337", Om: "166.5518278289", w: "124.2978493120", T: fmtDT(msOf(2461692.5495)) },
-    ice: "CO2", cz: 1, HN: 15, beta: 0.04, lk: 4.285, j: 0, ap: 20000, msun: -26.76, y0: 2025, y1: 2029, ref: "2026-12-20", view: "afr", obs: "",
+    ice: "CO2", cz: 1, HN: 15, beta: 0.04, lk: 4.285, j: 0, ap: 20000, msun: -26.76, y0: 2025, y1: 2029, ref: "2026-12-19", view: "afr", obs: "",
     note: "Perihelion 2.6 au on 2027 Oct 14, where water switches on (JPL elements, 2026 Sep solution). H<sub>N</sub> is a placeholder; K is fitted to the COBS total magnitudes. So far CO₂ fits (χ²<sub>ν</sub> ≈ 1) and water does not; a brightening well above the CO₂ curve in 2027 would show water ice at work."
   }
 };
@@ -59,6 +59,40 @@ Object.assign(PRESETS, {
   i3: MORE({ q: "1.35638454", e: "6.13941774", i: "175.11310480", Om: "322.15684249105", w: "128.01051366675", T: fmtDT(msOf(2460977.9814)) },
     { lk: 4.0, ice: "H2O", HN: 17.04, y0: 2025, y1: 2027, ref: "2025-07-16",
       note: "The third interstellar object, on a hyperbola with e = 6.14; perihelion 2025 Oct 29 at 1.36 au. H<sub>N</sub> from R<sub>N</sub> = 1.3 km and p = 0.04; K is fitted to the COBS magnitudes. Its water production exceeds what this nucleus can deliver: see the energy budget below." }),
+});
+
+// the second ten comets of the paper's forecast test: ice and K from the first half, cut at the split
+Object.assign(PRESETS, {
+  q2: MORE({ q: "1.290358238881392", e: "0.9977738520356274", i: "80.30130181438155", Om: "94.97505909428631", w: "12.39526184803142", T: fmtDT(msOf(2457052.569249606)) },
+    { lk: 5.061, ice: "H2O", cz: 0.25, HN: 15, y0: 2014, y1: 2016, ref: "2014-09-03", cut: "2015-04-18",
+      note: "The bright green comet of January 2015; perihelion 2015 Jan 30 at 1.29 au. The first half covers only 2.4 to 1.3 au: choosing the ice there is as loose as fitting <i>n</i>, and both forecasts fail (rms 5.5 and 5.8 mag; <i>n</i> = 3.5 misses by 1.8). One of the ten comets added to the paper’s forecast test by a fixed rule (most COBS observations in 2010–2025): the ice and K come from the points before the cut, the open circles test the forecast. H<sub>N</sub> is a placeholder." }),
+  k2: MORE({ q: "1.797281961376049", e: "1.000616562373503", i: "87.55487509681637", Om: "88.24109127986824", w: "236.1923489989567", T: fmtDT(msOf(2459933.227066954)) },
+    { lk: 5.963, ice: "CO", cz: 1, HN: 15, y0: 2017, y1: 2027, ref: "2017-06-16", cut: "2021-10-24",
+      note: "Active at 16 au; perihelion 2022 Dec 19 at 1.80 au. CO fits the slow approach, but near perihelion the comet stayed fainter than any constant-area ice predicts (the lingering coma of Sec. III B): the empirical law with fitted <i>n</i> does better (1.25 against 1.62 mag). One of the ten comets added to the paper’s forecast test by a fixed rule (most COBS observations in 2010–2025): the ice and K come from the points before the cut, the open circles test the forecast. H<sub>N</sub> is a placeholder." }),
+  t2: MORE({ q: "1.615095955888523", e: "0.9996765980850288", i: "57.23142385337199", Om: "64.37877215685057", w: "92.99331253710214", T: fmtDT(msOf(2458974.449996825)) },
+    { lk: 4.77, ice: "CO2", cz: 1, HN: 15, y0: 2017, y1: 2021, ref: "2017-12-02", cut: "2019-10-30",
+      note: "Perihelion 2020 May 4 at 1.62 au. Subsolar CO₂ fits the approach; the model and the empirical law forecast about equally (0.80 and 0.77 mag). One of the ten comets added to the paper’s forecast test by a fixed rule (most COBS observations in 2010–2025): the ice and K come from the points before the cut, the open circles test the forecast. H<sub>N</sub> is a placeholder." }),
+  p1: MORE({ q: "1.550535584223489", e: "1.000997435576857", i: "106.1772916768743", Om: "325.9972285528648", w: "90.74706541748093", T: fmtDT(msOf(2455919.177555371)) },
+    { lk: 5.548, ice: "CO", cz: 1, HN: 15, y0: 2010, y1: 2013, ref: "2010-09-02", cut: "2011-10-20",
+      note: "C/2009 P1 (Garradd), perihelion 2011 Dec 23 at 1.55 au and bright for months afterwards. CO fits the first half; both forecasts miss by 0.85 mag. One of the ten comets added to the paper’s forecast test by a fixed rule (most COBS observations in 2010–2025): the ice and K come from the points before the cut, the open circles test the forecast. H<sub>N</sub> is a placeholder." }),
+  e3: MORE({ q: "1.11224437022534", e: "1.000301905819192", i: "109.169480756749", Om: "302.5550197168474", w: "145.81492879", T: fmtDT(msOf(2459957.28519883)) },
+    { lk: 4.07, ice: "H2O", cz: 1, HN: 15, y0: 2022, y1: 2024, ref: "2022-03-24", cut: "2022-10-22",
+      note: "The green comet of early 2023; perihelion 2023 Jan 12 at 1.11 au. Subsolar water fits the approach and forecasts the rest best (0.35 mag, against 0.44 for fitted <i>n</i> and 0.63 for <i>n</i> = 3.5). One of the ten comets added to the paper’s forecast test by a fixed rule (most COBS observations in 2010–2025): the ice and K come from the points before the cut, the open circles test the forecast. H<sub>N</sub> is a placeholder." }),
+  l3: MORE({ q: "3.554492702308672", e: "1.001405275505796", i: "48.36374698279935", Om: "290.7888867057587", w: "171.6137051016775", T: fmtDT(msOf(2459589.132623246)) },
+    { lk: 5.308, ice: "CO2", cz: 0.25, HN: 15, y0: 2019, y1: 2025, ref: "2019-08-23", cut: "2021-09-11",
+      note: "Active from 8 au; perihelion 2022 Jan 9 at 3.55 au. Isothermal CO₂ fits the approach, but the comet faded more slowly afterwards: the empirical law with fitted <i>n</i> does better (1.67 against 1.94 mag). One of the ten comets added to the paper’s forecast test by a fixed rule (most COBS observations in 2010–2025): the ice and K come from the points before the cut, the open circles test the forecast. H<sub>N</sub> is a placeholder." }),
+  l4: MORE({ q: "0.3015442238164768", e: "1.000032767108972", i: "84.20819702923397", Om: "65.66588639150341", w: "333.6516376633611", T: fmtDT(msOf(2456361.669960002)) },
+    { lk: 5.019, ice: "CO2", cz: 0.25, HN: 15, y0: 2011, y1: 2015, ref: "2011-06-23", cut: "2013-04-02",
+      note: "C/2011 L4 (PANSTARRS), a naked-eye comet in March 2013; perihelion 2013 Mar 10 at 0.30 au. After perihelion both laws miss by about 1 mag. One of the ten comets added to the paper’s forecast test by a fixed rule (most COBS observations in 2010–2025): the ice and K come from the points before the cut, the open circles test the forecast. H<sub>N</sub> is a placeholder." }),
+  a6: MORE({ q: "0.5299041302912412", e: "0.9955362293967411", i: "143.663707214442", Om: "108.0979873301086", w: "132.9688404751593", T: fmtDT(msOf(2460988.039387102)) },
+    { lk: 4.252, ice: "CO", cz: 1, HN: 15, y0: 2025, y1: 2027, ref: "2025-08-23", cut: "2026-02-06",
+      note: "C/2025 A6 (Lemmon), bright in October 2025; perihelion 2025 Nov 8 at 0.53 au. It faded faster after perihelion than either law predicts from the approach (rms 1.8 and 2.2 mag; <i>n</i> = 4 does best, 1.3). One of the ten comets added to the paper’s forecast test by a fixed rule (most COBS observations in 2010–2025): the ice and K come from the points before the cut, the open circles test the forecast. H<sub>N</sub> is a placeholder." }),
+  v2j: MORE({ q: "1.636950053071025", e: "1.001702614530096", i: "49.87481167153636", Om: "69.8521003063327", w: "164.8980978916873", T: fmtDT(msOf(2457916.847458616)) },
+    { lk: 4.644, ice: "CO", cz: 1, HN: 15, y0: 2015, y1: 2019, ref: "2015-11-07", cut: "2017-01-27",
+      note: "C/2015 V2 (Johnson), perihelion 2017 Jun 12 at 1.64 au. CO fits the approach; the empirical law with fitted <i>n</i> forecasts the rest much better (0.27 against 0.64 mag). One of the ten comets added to the paper’s forecast test by a fixed rule (most COBS observations in 2010–2025): the ice and K come from the points before the cut, the open circles test the forecast. H<sub>N</sub> is a placeholder." }),
+  v2z: MORE({ q: "2.227959873700067", e: "1.00089953037377", i: "131.6110418896687", Om: "212.3712351547342", w: "162.4243172377264", T: fmtDT(msOf(2460073.056589952)) },
+    { lk: 5.179, ice: "CO2", cz: 0.25, HN: 15, y0: 2020, y1: 2026, ref: "2021-01-17", cut: "2023-02-15",
+      note: "C/2020 V2 (ZTF), active beyond 8 au; perihelion 2023 May 8 at 2.23 au. Isothermal CO₂ fits the approach; <i>n</i> = 3.5 forecasts the rest best (0.48 mag, model 0.82). One of the ten comets added to the paper’s forecast test by a fixed rule (most COBS observations in 2010–2025): the ice and K come from the points before the cut, the open circles test the forecast. H<sub>N</sub> is a placeholder." }),
 });
 
 // COBS light curves (data/cobs_lightcurves.txt, CC BY-NC-SA 4.0), appended to the presets
@@ -316,7 +350,7 @@ function drawN() {
   clip(g, X, Y);
   const mute = css("--mute"), ink = css("--ink");
   g.strokeStyle = mute; g.setLineDash([2, 3]); g.beginPath(); g.moveTo(box.l, Y(3.5)); g.lineTo(box.r, Y(3.5)); g.stroke(); g.setLineDash([]);
-  g.fillStyle = mute; g.font = FONTS; g.textAlign = "left"; g.textBaseline = "top"; g.fillText("floor 7/2", box.l + 4, Y(3.5) + 3);
+  g.fillStyle = mute; g.font = FONTS; g.textAlign = "left"; g.textBaseline = "top"; g.fillText("energy-limited 7/2", box.l + 4, Y(3.5) + 3);
   if (S.nbox) { const b = S.nbox, oc = css("--obs"); g.fillStyle = alpha(oc, 0.22); g.strokeStyle = oc; g.fillRect(X(b.r0), Y(b.n + b.s), X(b.r1) - X(b.r0), Y(b.n - b.s) - Y(b.n + b.s)); g.strokeRect(X(b.r0), Y(b.n + b.s), X(b.r1) - X(b.r0), Y(b.n - b.s) - Y(b.n + b.s)); g.fillStyle = oc; g.textAlign = "left"; g.textBaseline = "middle"; g.fillText("UN271", X(b.r1) + 5, Y(b.n)); }
   const holt = (r) => 0.40 * r * (Math.log(r) + 1) - 1.78;
   path(g, curveR(2.5, 10, 60), curveR(2.5, 10, 60).map(holt), X, Y, { c: ink, w: 1.4, dash: [6, 4] });

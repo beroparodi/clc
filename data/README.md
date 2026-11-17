@@ -14,6 +14,13 @@ Database – CC BY-NC-SA 4.0. We thank the observers worldwide who contributed t
   2 per bin, dated at the median time. Error: sqrt(0.15² + (1.4826 MAD)²/N); bins with an error
   above 0.6 mag are dropped. No aperture correction: the tool compares them with a fixed
   aperture of 20 000 km (j = 0), and K in each preset is fitted to them (`test/fit_cobs.js`).
+* `q2`, `k2`, `t2`, `p1`, `e3`, `l3`, `l4`, `a6`, `v2j`, `v2z`: the second ten comets of the paper's
+  forecast test, chosen by a rule fixed before their forecasts were computed (the ten comets not yet in
+  the sample with the most COBS observations in one apparition among comets with perihelion in
+  2010–2025; census of 2026 November 17). All records of the apparition (methods S, M, B, I, Z, V, C,
+  retrieved 2026 November 17) binned by one rule: bins of max(3 d, span/50) counted from the first
+  record, median of at least 2 values dated at the median time, the same error and the same 0.6 mag cut
+  as above (`code/bin_cobs.py`; a `%` line before each section gives the record count and bin width).
 * `un271`: total CCD magnitudes (V, R and V-calibrated unfiltered) moved to the paper's system,
   r′ in a 6″ radius aperture: the stated photometric aperture is read as a diameter (it equals
   the coma diameter in 301 of 305 records), the nucleus is removed, the coma flux is scaled by

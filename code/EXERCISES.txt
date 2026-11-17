@@ -37,7 +37,11 @@ Numbers in brackets are the results to check against.
        observations. Fit Eq. (14) (one constant) and Eq. (1) (m0 and n) to the first half of the
        light curve, and compare their forecasts of the second half (forecast_test.py shows how).
    (b) Repeat with Eq. (1) at fixed n = 3.5 and n = 4. When does the physics help?
-   (c) Before the next observing season of C/2014 UN271 or C/2025 Y1, write down the forecast of
+   (c) Pick five more comets by a rule you write down before looking at any forecast (for example
+       the brightest of a given year), bin them with fetch() and bin_records() of bin_cobs.py and
+       repeat (a) and (b). Does your score agree with the twenty comets of the paper (11 better,
+       4 equal, 5 worse against fitted n; 5, 9, 6 against n = 3.5)? Why does the rule come first?
+   (d) Before the next observing season of C/2014 UN271 or C/2025 Y1, write down the forecast of
        each case in Sec. IV and check it against your own photometry afterwards.
 
 6. Criteria (Sec. III).

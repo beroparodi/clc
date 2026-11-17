@@ -1,4 +1,9 @@
-"""Forecasts of Eq. (14) against the empirical law, Eq. (1), for ten COBS light curves (Sec. III C).
+"""Forecasts of Eq. (14) against the empirical law, Eq. (1), for twenty COBS light curves (Sec. III C).
+
+The first ten are the comets of the interactive tool; the second ten were added afterwards by a rule fixed
+before any of their forecasts was computed: the ten comets not yet in the sample with the most COBS
+observations in one apparition among comets with perihelion in 2010-2025 (census of the COBS
+Observation List API, 2026 November 17), binned by bin_cobs.py (bins of max(3 d, span/50)).
 
 For each comet the points are sorted in time and split in half.  On the first half, Eq. (14) is fitted
 (one constant K) for each of the five cases (CO, CO2 and H2O at the subsolar point, CO2 and H2O
@@ -33,7 +38,23 @@ COMETS = {
     "a3":    dict(name="C/2023 A3 (Tsuchinshan-ATLAS)", q=0.39145906, e=1.00012475, i=139.11502467, Om=21.558609111275, w=308.4872848828, Tp=2460581.2353, HN=15),
     "sw1":   dict(name="29P/Schwassmann-Wachmann", q=5.77512802, e=0.04479814, i=9.36477141, Om=312.39091654503, w=50.662700071797, Tp=2458589.9259, HN=10.22),
     "hyak":  dict(name="C/1996 B2 (Hyakutake)", q=0.23022353, e=0.99989165, i=124.92204939, Om=188.04513199216, w=130.1751209781, Tp=2450204.8941, HN=15.71),
+    # the second ten (JPL Small-Body Database, osculating elements near perihelion; no measured nucleus: H_N = 15)
+    "q2":  dict(name="C/2014 Q2 (Lovejoy)", q=1.290358238881392, e=0.9977738520356274, i=80.30130181438155, Om=94.97505909428631, w=12.39526184803142, Tp=2457052.569249606, HN=15),
+    "k2":  dict(name="C/2017 K2 (PANSTARRS)", q=1.797281961376049, e=1.000616562373503, i=87.55487509681637, Om=88.24109127986824, w=236.1923489989567, Tp=2459933.227066954, HN=15),
+    "t2":  dict(name="C/2017 T2 (PANSTARRS)", q=1.615095955888523, e=0.9996765980850288, i=57.23142385337199, Om=64.37877215685057, w=92.99331253710214, Tp=2458974.449996825, HN=15),
+    "p1":  dict(name="C/2009 P1 (Garradd)", q=1.550535584223489, e=1.000997435576857, i=106.1772916768743, Om=325.9972285528648, w=90.74706541748093, Tp=2455919.177555371, HN=15),
+    "e3":  dict(name="C/2022 E3 (ZTF)", q=1.11224437022534, e=1.000301905819192, i=109.169480756749, Om=302.5550197168474, w=145.81492879, Tp=2459957.285198830, HN=15),
+    "l3":  dict(name="C/2019 L3 (ATLAS)", q=3.554492702308672, e=1.001405275505796, i=48.36374698279935, Om=290.7888867057587, w=171.6137051016775, Tp=2459589.132623246, HN=15),
+    "l4":  dict(name="C/2011 L4 (PANSTARRS)", q=0.3015442238164768, e=1.000032767108972, i=84.20819702923397, Om=65.66588639150341, w=333.6516376633611, Tp=2456361.669960002, HN=15),
+    "a6":  dict(name="C/2025 A6 (Lemmon)", q=0.5299041302912412, e=0.9955362293967411, i=143.663707214442, Om=108.0979873301086, w=132.9688404751593, Tp=2460988.039387102, HN=15),
+    "v2j": dict(name="C/2015 V2 (Johnson)", q=1.636950053071025, e=1.001702614530096, i=49.87481167153636, Om=69.8521003063327, w=164.8980978916873, Tp=2457916.847458616, HN=15),
+    "v2z": dict(name="C/2020 V2 (ZTF)", q=2.227959873700067, e=1.00089953037377, i=131.6110418896687, Om=212.3712351547342, w=162.4243172377264, Tp=2460073.056589952, HN=15),
 }
+FIRST = ["un271", "hb", "t5", "y1", "neo", "p12", "i3", "a3", "sw1", "hyak"]
+SECOND = ["q2", "k2", "t2", "p1", "e3", "l3", "l4", "a6", "v2j", "v2z"]
+WINDOWS = {k: (None, None) for k in SECOND}      # long-period comets: all records of the apparition
+COBS_DES = {"q2": "C/2014 Q2", "k2": "C/2017 K2", "t2": "C/2017 T2", "p1": "C/2009 P1", "e3": "C/2022 E3",
+            "l3": "C/2019 L3", "l4": "C/2011 L4", "a6": "C/2025 A6", "v2j": "C/2015 V2", "v2z": "C/2020 V2"}
 CASES = [("CO", 1.0), ("CO2", 1.0), ("CO2", 0.25), ("H2O", 1.0), ("H2O", 0.25)]
 
 def anomaly(c, J):
@@ -73,7 +94,7 @@ def load(path=os.path.join(HERE, "cobs", "cobs_lightcurves.txt")):
     data, key = {}, None
     for line in open(path):
         if line.startswith("#"): key = line[1:].strip(); data[key] = []
-        elif line.strip():
+        elif line.strip() and not line.startswith("%"):
             d, m, s = line.split()[:3]; data[key].append((jd(d + "T00:00"), float(m), float(s)))
     return data
 
@@ -118,7 +139,8 @@ def best_case(c, pts, m, s, setup):
 def run(verbose=True):
     data, rows = load(), []
     pro = [(jd("2021-12-15T00:00"), 18.99, 0.05), (jd("2024-02-15T00:00"), 17.38, 0.03)]   # LOOK, LCO (r' in 6")
-    for key, c in COMETS.items():
+    for key in FIRST + SECOND:
+        c = COMETS[key]
         setup = dict(j=1, ap=6.0, msun=-26.93) if key == "un271" else dict(j=0, ap=20000.0, msun=-26.762)
         obs = sorted(data[key]) if key != "un271" else pro + sorted(data[key])
         J = np.array([o[0] for o in obs]); m = np.array([o[1] for o in obs]); s = np.array([o[2] for o in obs])
@@ -146,13 +168,21 @@ def run(verbose=True):
         print(f"\n{'comet':30s} forecast rms: model  n fitted  n = 3.5 fixed  n = 4 fixed")
         for r in rows:
             print(f"{r[0]:30s}               {r[4]:5.2f}     {r[5]:5.2f}         {r[9]:5.2f}        {r[10]:5.2f}")
-        for lab, j in (("n fitted (m0, n)", 5), ("n = 3.5 fixed (m0)", 9), ("n = 4 fixed (m0)", 10)):
-            w = sum(r[4] < r[j] - 0.05 for r in rows); l = sum(r[4] > r[j] + 0.05 for r in rows)
-            print(f"model vs empirical law, {lab:18s}: better {w}, equal within 0.05 mag {len(rows) - w - l}, worse {l}")
+        from scipy.stats import binomtest
+        for grp, sel in (("first ten", rows[:10]), ("second ten", rows[10:]), ("all twenty", rows)):
+            if not sel: continue
+            print(f"-- {grp}:")
+            for lab, j in (("n fitted (m0, n)", 5), ("n = 3.5 fixed (m0)", 9), ("n = 4 fixed (m0)", 10)):
+                w = sum(r[4] < r[j] - 0.05 for r in sel); l = sum(r[4] > r[j] + 0.05 for r in sel)
+                p = binomtest(w, w + l, 0.5, alternative="greater").pvalue if w + l else float("nan")
+                med = float(np.median([r[j] - r[4] for r in sel]))
+                print(f"model vs empirical law, {lab:18s}: better {w}, equal within 0.05 mag {len(sel) - w - l}, "
+                      f"worse {l}; sign test p = {p:.3f}; median rms gain {med:+.2f} mag")
         # criterion (iii): forecast within a factor of 2 in flux, i.e. rms <= 0.75 mag
-        print("criterion (iii), rms <= 0.75 mag: model passes", sum(r[4] <= 0.75 for r in rows),
-              "; empirical (n fitted)", sum(r[5] <= 0.75 for r in rows), "; n = 3.5", sum(r[9] <= 0.75 for r in rows),
-              "; n = 4", sum(r[10] <= 0.75 for r in rows), "of", len(rows))
+        for grp, sel in (("first ten", rows[:10]), ("second ten", rows[10:]), ("all twenty", rows)):
+            print(f"criterion (iii), rms <= 0.75 mag, {grp}: model passes", sum(r[4] <= 0.75 for r in sel),
+                  "; empirical (n fitted)", sum(r[5] <= 0.75 for r in sel), "; n = 3.5", sum(r[9] <= 0.75 for r in sel),
+                  "; n = 4", sum(r[10] <= 0.75 for r in sel), "of", len(sel))
     return rows
 
 def water_forced(keys=("hb", "a3")):
