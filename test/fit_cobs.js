@@ -16,7 +16,7 @@ const EL = {
 const SCEN = [['CO', 1], ['CO2', 1], ['CO2', 0.25], ['H2O', 1], ['H2O', 0.25]];
 const data = {}; let cur = null;
 for (const l of fs.readFileSync(process.argv[2], 'utf8').split('\n')) {
-  if (l.startsWith('#')) { cur = l.slice(1).trim(); data[cur] = []; } else if (l.trim()) { const [d, m, s] = l.split(/\s+/); data[cur].push({ ms: iso(d), m: +m, s: +s }); }
+  if (l.startsWith('#')) { cur = l.slice(1).trim(); data[cur] = []; } else if (l.trim() && !l.startsWith('%')) { const [d, m, s] = l.split(/\s+/); data[cur].push({ ms: iso(d), m: +m, s: +s }); }
 }
 function fit(key, x, c, HN) {
   const el = { ...EL[key], full: true }, P = { HN, beta: 0.04, j: 0, ap: 20000, msun: -26.76 };

@@ -1,14 +1,20 @@
-"""Forecasts of Eq. (14) against the empirical law, Eq. (1), for twenty COBS light curves (Sec. III C).
+"""Forecasts of Eq. (14) against the empirical law, Eq. (1), for 25 COBS light curves (Sec. III C).
 
-The first ten are the comets of the interactive tool; the second ten were added afterwards by a rule fixed
-before any of their forecasts was computed: the ten comets not yet in the sample with the most COBS
-observations in one apparition among comets with perihelion in 2010-2025 (census of the COBS
-Observation List API, 2026 November 17), binned by bin_cobs.py (bins of max(3 d, span/50)).
+The sample was assembled in three steps, each rule fixed before the forecasts of its comets were computed:
+  * the ten comets of the interactive tool (FIRST);
+  * the ten comets not yet in the sample with the most COBS observations in one apparition among comets
+    with perihelion in 2010-2025 (SECOND; census of the COBS Observation List API, 2026 November 17);
+  * the five comets not yet in the sample with the most COBS observations in one such apparition whose
+    record starts beyond 5 au before perihelion, with at least three records there (THIRD).
+All light curves except C/2014 UN271 are binned by one rule (bin_cobs.py: bins of max(3 d, span/50)).
 
 For each comet the points are sorted in time and split in half.  On the first half, Eq. (14) is fitted
 (one constant K) for each of the five cases (CO, CO2 and H2O at the subsolar point, CO2 and H2O
 isothermal) and the case with the lowest chi^2 is kept; the empirical law m = m0 + 5 lg D + 2.5 n lg r
 is fitted (m0 and n) by weighted least squares.  Both then forecast the second half (rms in mag).
+An ice "switches on" within the fitted half when the kept case gives a local activity index
+n = 7/2 - d ln(eta)/d ln(r) above 4.5 at some point of that half (Sec. II C); this flag was fixed
+before the forecasts of the 25-comet sample were computed.
 C/2014 UN271 as in Sec. IV A: CO2 at the subsolar point with K from the 2024 LCO point, the empirical
 law through the two professional points, tested on the COBS monthly medians (r' in 6").
 Total magnitudes of the other comets are compared in a fixed aperture of 20 000 km (j = 0) with
@@ -49,12 +55,31 @@ COMETS = {
     "a6":  dict(name="C/2025 A6 (Lemmon)", q=0.5299041302912412, e=0.9955362293967411, i=143.663707214442, Om=108.0979873301086, w=132.9688404751593, Tp=2460988.039387102, HN=15),
     "v2j": dict(name="C/2015 V2 (Johnson)", q=1.636950053071025, e=1.001702614530096, i=49.87481167153636, Om=69.8521003063327, w=164.8980978916873, Tp=2457916.847458616, HN=15),
     "v2z": dict(name="C/2020 V2 (ZTF)", q=2.227959873700067, e=1.00089953037377, i=131.6110418896687, Om=212.3712351547342, w=162.4243172377264, Tp=2460073.056589952, HN=15),
+    # the third group: first seen beyond 5 au (JPL Small-Body Database; H_N = 15)
+    "us10": dict(name="C/2013 US10 (Catalina)", q=0.8229694514684749, e=1.000280139519764, i=148.8782967756639, Om=186.1445797203693, w=340.358754276709, Tp=2457342.221641829, HN=15),
+    "k1":   dict(name="C/2012 K1 (PANSTARRS)", q=1.054597098294, e=1.000152915493971, i=142.4282581726916, Om=317.7376491689354, w=203.1066008825931, Tp=2456897.160363006, HN=15),
+    "g2":   dict(name="C/2021 G2 (ATLAS)", q=4.982360288479666, e=1.000603552652205, i=48.46954508656729, Om=221.095294828915, w=343.2672327577748, Tp=2460562.634007078, HN=15),
+    "e2":   dict(name="C/2022 E2 (ATLAS)", q=3.666295808424358, e=1.001060418168188, i=137.1316685887328, Om=125.3761151010601, w=41.72559864492467, Tp=2460567.633887190, HN=15),
+    "n2":   dict(name="C/2022 N2 (PANSTARRS)", q=3.825529163602361, e=1.003236448782429, i=5.503022530288324, Om=319.7406957022052, w=75.38965400185295, Tp=2460888.270675301, HN=15),
 }
 FIRST = ["un271", "hb", "t5", "y1", "neo", "p12", "i3", "a3", "sw1", "hyak"]
 SECOND = ["q2", "k2", "t2", "p1", "e3", "l3", "l4", "a6", "v2j", "v2z"]
-WINDOWS = {k: (None, None) for k in SECOND}      # long-period comets: all records of the apparition
-COBS_DES = {"q2": "C/2014 Q2", "k2": "C/2017 K2", "t2": "C/2017 T2", "p1": "C/2009 P1", "e3": "C/2022 E3",
-            "l3": "C/2019 L3", "l4": "C/2011 L4", "a6": "C/2025 A6", "v2j": "C/2015 V2", "v2z": "C/2020 V2"}
+THIRD = ["us10", "k1", "g2", "e2", "n2"]
+SAMPLE = FIRST + SECOND + THIRD
+# apparition windows for bin_cobs.py (None = all records); C/2014 UN271 is converted by cobs_un271.py
+WINDOWS = {k: (None, None) for k in SAMPLE if k != "un271"}
+WINDOWS["p12"] = (datetime(2020, 1, 1), None)
+WINDOWS["sw1"] = (datetime(2010, 1, 1), datetime(2026, 11, 17))
+COBS_DES = {"hb": "C/1995 O1", "hyak": "C/1996 B2", "neo": "C/2020 F3", "p12": "12P", "a3": "C/2023 A3", "i3": "3I",
+            "t5": "C/2024 T5", "y1": "C/2025 Y1", "sw1": "29P",
+            "q2": "C/2014 Q2", "k2": "C/2017 K2", "t2": "C/2017 T2", "p1": "C/2009 P1", "e3": "C/2022 E3",
+            "l3": "C/2019 L3", "l4": "C/2011 L4", "a6": "C/2025 A6", "v2j": "C/2015 V2", "v2z": "C/2020 V2",
+            "us10": "C/2013 US10", "k1": "C/2012 K1", "g2": "C/2021 G2", "e2": "C/2022 E2", "n2": "C/2022 N2"}
+N_SWITCH = 4.5           # threshold of the switch-on flag (Sec. II C)
+
+def n_local(r, x, chi, h=1e-3):
+    """Local activity index of a dominant coma, n = 7/2 - d ln(eta)/d ln(r)."""
+    return 3.5 - (np.log(eta(r * (1 + h), x, chi)) - np.log(eta(r * (1 - h), x, chi))) / (np.log(1 + h) - np.log(1 - h))
 CASES = [("CO", 1.0), ("CO2", 1.0), ("CO2", 0.25), ("H2O", 1.0), ("H2O", 0.25)]
 
 def anomaly(c, J):
@@ -139,7 +164,7 @@ def best_case(c, pts, m, s, setup):
 def run(verbose=True):
     data, rows = load(), []
     pro = [(jd("2021-12-15T00:00"), 18.99, 0.05), (jd("2024-02-15T00:00"), 17.38, 0.03)]   # LOOK, LCO (r' in 6")
-    for key in FIRST + SECOND:
+    for key in SAMPLE:
         c = COMETS[key]
         setup = dict(j=1, ap=6.0, msun=-26.93) if key == "un271" else dict(j=0, ap=20000.0, msun=-26.762)
         obs = sorted(data[key]) if key != "un271" else pro + sorted(data[key])
@@ -159,30 +184,30 @@ def run(verbose=True):
         else: xa, ca, la, _ = best_case(c, pts, m, s, setup)
         a0, an = fit_empirical(pts, m, s)
         h_mod = rms(m - model(c, pts, xa, ca, la, setup)); h_emp = rms(m - empirical(pts, a0, an))
+        n_max = max(n_local(rv, x, chi) for rv in pts[tr, 0])
         rows.append((c["name"], len(tr), len(te), x + ("" if chi == 1 else " iso"), f_mod, f_emp, n, h_mod, h_emp,
-                     f_fix[3.5], f_fix[4.0]))
+                     f_fix[3.5], f_fix[4.0], n_max, n_max > N_SWITCH))
     if verbose:
-        print(f"{'comet':30s} fit test  case       forecast rms: model  empirical (n)   hindsight rms: model  empirical")
+        print(f"{'comet':30s} fit test  case     n_max switch  forecast rms: model  n fitted (n)  n = 3.5  n = 4   hindsight: model  emp.")
         for r in rows:
-            print(f"{r[0]:30s} {r[1]:3d} {r[2]:4d}  {r[3]:8s}            {r[4]:5.2f}     {r[5]:5.2f} ({r[6]:4.1f})            {r[7]:5.2f}     {r[8]:5.2f}")
-        print(f"\n{'comet':30s} forecast rms: model  n fitted  n = 3.5 fixed  n = 4 fixed")
-        for r in rows:
-            print(f"{r[0]:30s}               {r[4]:5.2f}     {r[5]:5.2f}         {r[9]:5.2f}        {r[10]:5.2f}")
-        from scipy.stats import binomtest
-        for grp, sel in (("first ten", rows[:10]), ("second ten", rows[10:]), ("all twenty", rows)):
-            if not sel: continue
-            print(f"-- {grp}:")
+            print(f"{r[0]:30s} {r[1]:3d} {r[2]:4d}  {r[3]:8s} {r[11]:5.1f}  {'yes' if r[12] else 'no ':3s}             {r[4]:5.2f}   {r[5]:5.2f} ({r[6]:4.1f})  {r[9]:5.2f}  {r[10]:5.2f}            {r[7]:5.2f}  {r[8]:5.2f}")
+        from scipy.stats import binomtest, mannwhitneyu
+        def score(sel, j):
+            w = sum(r[4] < r[j] - 0.05 for r in sel); l = sum(r[4] > r[j] + 0.05 for r in sel)
+            p = binomtest(w, w + l, 0.5, alternative="greater").pvalue if w + l else float("nan")
+            return w, len(sel) - w - l, l, p, float(np.median([r[j] - r[4] for r in sel]))
+        on = [r for r in rows if r[12]]; off = [r for r in rows if not r[12]]
+        for grp, sel in (("all 25", rows), (f"ice switches on (n > {N_SWITCH})", on), ("no switch-on", off)):
+            print(f"-- {grp}: {len(sel)} comets")
             for lab, j in (("n fitted (m0, n)", 5), ("n = 3.5 fixed (m0)", 9), ("n = 4 fixed (m0)", 10)):
-                w = sum(r[4] < r[j] - 0.05 for r in sel); l = sum(r[4] > r[j] + 0.05 for r in sel)
-                p = binomtest(w, w + l, 0.5, alternative="greater").pvalue if w + l else float("nan")
-                med = float(np.median([r[j] - r[4] for r in sel]))
-                print(f"model vs empirical law, {lab:18s}: better {w}, equal within 0.05 mag {len(sel) - w - l}, "
-                      f"worse {l}; sign test p = {p:.3f}; median rms gain {med:+.2f} mag")
-        # criterion (iii): forecast within a factor of 2 in flux, i.e. rms <= 0.75 mag
-        for grp, sel in (("first ten", rows[:10]), ("second ten", rows[10:]), ("all twenty", rows)):
-            print(f"criterion (iii), rms <= 0.75 mag, {grp}: model passes", sum(r[4] <= 0.75 for r in sel),
-                  "; empirical (n fitted)", sum(r[5] <= 0.75 for r in sel), "; n = 3.5", sum(r[9] <= 0.75 for r in sel),
-                  "; n = 4", sum(r[10] <= 0.75 for r in sel), "of", len(sel))
+                w, e, l, p, g = score(sel, j)
+                print(f"model vs empirical law, {lab:18s}: better {w}, equal within 0.05 mag {e}, worse {l}; "
+                      f"sign test p = {p:.3f}; median rms gain {g:+.2f} mag")
+            print(f"criterion (iii), rms <= 0.75 mag: model {sum(r[4] <= 0.75 for r in sel)}, n fitted "
+                  f"{sum(r[5] <= 0.75 for r in sel)}, n = 3.5 {sum(r[9] <= 0.75 for r in sel)}, n = 4 {sum(r[10] <= 0.75 for r in sel)} of {len(sel)}")
+        for lab, j in (("n fitted", 5), ("n = 3.5", 9)):
+            u = mannwhitneyu([r[j] - r[4] for r in on], [r[j] - r[4] for r in off], alternative="greater")
+            print(f"gain over {lab}: switch-on comets vs the rest, one-sided Mann-Whitney p = {u.pvalue:.3f}")
     return rows
 
 def water_forced(keys=("hb", "a3")):

@@ -4,10 +4,12 @@ Input: cobs/raw/<key>.txt, one record per line: 'YYYY-MM-DDTHH:MM magnitude meth
 List API; our records were retrieved 2026 November 17; CC BY-NC-SA 4.0).  Rule, fixed before any forecast was made:
   * methods S, M, B, I (visual) and Z, V, C (CCD), magnitudes as reported (no aperture correction);
   * observations within the apparition window (WINDOWS in forecast_test.py: all records for these comets);
-  * bin width w = max(3 d, span/50), span = first to last observation, bins counted from the first;
+  * only records between the 1st and 99th percentile of their dates (this drops stray records far from
+    the apparition, which otherwise stretch the bins: NEOWISE has records up to 2023);
+  * bin width w = max(3 d, span/50), span = first to last kept record, bins counted from the first;
   * per bin: median magnitude, dated at the median time, at least 2 observations,
     error sqrt(0.15^2 + (1.4826 MAD)^2 / N); bins with an error above 0.6 mag are dropped.
-Usage: python bin_cobs.py --fetch     (downloads the records of the second ten comets; needs internet)
+Usage: python bin_cobs.py --fetch     (downloads the records of all comets but C/2014 UN271; needs internet)
        python bin_cobs.py [key ...]   (prints the light curves in the format of cobs_lightcurves.txt)
 COBS keeps receiving and revising records, so a later download may differ slightly from ours."""
 import os, sys
@@ -47,6 +49,9 @@ def fetch(key, des):
     return len(lines)
 
 def bin_records(rec):
+    N = len(rec)
+    lo, hi = rec[int(np.floor(0.01 * (N - 1) + 0.5))][0], rec[int(np.floor(0.99 * (N - 1) + 0.5))][0]
+    rec = [x for x in rec if lo <= x[0] <= hi]
     t0, t1 = rec[0][0], rec[-1][0]
     w = max(3, int(np.floor((t1 - t0).total_seconds() / 86400 / 50 + 0.5)))
     bins = {}

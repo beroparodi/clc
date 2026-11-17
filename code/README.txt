@@ -17,8 +17,9 @@ there. EXERCISES.txt suggests how to use the code and the data in a course.
   swan_data.py             SWAN water-production power laws of Combi et al. (2019) and later
                            papers (2015-2025, incl. 3I/ATLAS); SWAN rates of C/2017 K2 and
                            C/2022 E3 (Combi et al. 2025) and our fits to them
-  forecast_test.py         Forecasts of Eq. (14) against the empirical law, Eq. (1), for twenty
-                           COBS light curves (Sec. III C and its note): fit on the first half,
+  forecast_test.py         Forecasts of Eq. (14) against the empirical law, Eq. (1), for 25
+                           COBS light curves (Sec. III C and its note), with the switch-on flag
+                           and the comparison of flagged comets with the rest: fit on the first half,
                            forecast rms on the second half, against Eq. (1) with n fitted and
                            with n fixed at 3.5 and 4; criterion (iii); hindsight fits; forecasts
                            with subsolar water imposed (C/1995 O1, C/2023 A3)
@@ -35,9 +36,9 @@ there. EXERCISES.txt suggests how to use the code and the data in a course.
                            model, Parodi (2013) (standalone)
   cobs/un271_cobs.csv      The COBS records of C/2014 UN271 (COBS Comet Observation Database,
                            https://cobs.si; licensed CC BY-NC-SA 4.0, not CC BY)
-  bin_cobs.py              The fixed binning rule of the second ten comets of the forecast test;
-                           --fetch downloads their COBS records (internet needed)
-  cobs/cobs_lightcurves.txt  Binned COBS light curves of the twenty comets (median per bin;
+  bin_cobs.py              The binning rule of the forecast test; --fetch downloads the COBS
+                           records of all its comets but C/2014 UN271 (internet needed)
+  cobs/cobs_lightcurves.txt  Binned COBS light curves of the 25 comets (median per bin;
                            CC BY-NC-SA 4.0, see cobs/README.txt)
 
 Usage (running times on a laptop):
@@ -50,9 +51,9 @@ Usage (running times on a laptop):
        python forecast_test.py        (about a minute)
        python earlier_model_revisited.py
 
-The binned light curves were made from COBS records retrieved on 2026 November 16 and, for the
-second ten comets, 2026 November 17 (see cobs/README.txt). The raw records are not included; for
-the second ten, bin_cobs.py --fetch downloads them and bin_cobs.py bins them with the rule of the
-paper (the first ten were binned by hand, with bin widths chosen per comet).
+The binned light curves were made from COBS records retrieved on 2026 November 17 (C/2014 UN271:
+November 16; see cobs/README.txt). The raw records are not included: bin_cobs.py --fetch downloads
+them and bin_cobs.py bins them with the rule of the paper (COBS keeps adding records, so the bins
+may change slightly).
 
 License: CC BY 4.0 (code and text); the COBS data in cobs/ are CC BY-NC-SA 4.0.

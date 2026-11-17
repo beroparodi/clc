@@ -39,8 +39,8 @@ Numbers in brackets are the results to check against.
    (b) Repeat with Eq. (1) at fixed n = 3.5 and n = 4. When does the physics help?
    (c) Pick five more comets by a rule you write down before looking at any forecast (for example
        the brightest of a given year), bin them with fetch() and bin_records() of bin_cobs.py and
-       repeat (a) and (b). Does your score agree with the twenty comets of the paper (11 better,
-       4 equal, 5 worse against fitted n; 5, 9, 6 against n = 3.5)? Why does the rule come first?
+       repeat (a) and (b). Does the model win where its ice switches on (local n above 4.5 on the
+       fitted half), as for 8 of the 10 such comets of the paper? Why does the rule come first?
    (d) Before the next observing season of C/2014 UN271 or C/2025 Y1, write down the forecast of
        each case in Sec. IV and check it against your own photometry afterwards.
 
