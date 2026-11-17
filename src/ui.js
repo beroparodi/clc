@@ -110,6 +110,16 @@ Object.assign(PRESETS, {
       note: "C/2022 N2 (PANSTARRS), first seen by amateurs at 7.0 au; perihelion 2025 Jul 31 at 3.83 au. In the paper’s forecast test of 25 comets, CO₂ at the subsolar point fits the points before the cut; the forecast rms is 0.32 mag, against 0.33 for the empirical law with fitted <i>n</i> (<i>n</i> = 3.9) and 0.32 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
 });
 
+// two famous disappointments, run through the rules of the paper's forecast test (not among its 25 comets)
+Object.assign(PRESETS, {
+  koh: MORE({ q: "0.1424250322974156", e: "1.000007809885518", i: "14.3041449344601", Om: "258.4894909953879", w: "37.79756893411028", T: fmtDT(msOf(2442044.930683474144)) },
+    { lk: 4.8026, ice: "CO", cz: 1, HN: 15, y0: 1973, y1: 1975, ref: "1973-10-06", cut: "1974-01-08",
+      note: "The “comet of the century” of 1973 that disappointed. Discovered on 1973 Mar 18 at 4.6 au; extrapolations with a fixed index (<i>n</i> = 4 to 6) promised magnitude −10 or brighter, but it peaked near −3 at perihelion on 1973 Dec 28, 0.14 au from the Sun and too close to it for ground observers. COBS holds almost no magnitudes from before October 1973. With the rules of the paper’s forecast test (it is not one of the 25 comets), CO at the subsolar point fits the points before the cut; the forecast rms is 1.55 mag, against 1.46 for the empirical law with fitted <i>n</i> (<i>n</i> = 2.8) and 1.55 for <i>n</i> = 3.5. No law foresees how fast it faded after perihelion: with one μ before and one after, μ<sub>post</sub>/μ<sub>pre</sub> = 0.27. H<sub>N</sub> is a placeholder." }),
+  ison: MORE({ q: "0.01246672509220626", e: "1.00000509491957", i: "62.16289620932959", Om: "295.6865414817095", w: "345.5411966905318", T: fmtDT(msOf(2456625.264531166622)) },
+    { lk: 4.1954, ice: "CO", cz: 1, HN: 15, y0: 2012, y1: 2014, ref: "2012-12-17", cut: "2013-05-06",
+      note: "The sungrazer of 2013, which prompted Parodi (2013), the forerunner of this model. Discovered on 2012 Sep 21 at 6.3 au; early extrapolations promised a comet brighter than the full Moon. Its brightness stalled in the first half of 2013 and rose again after its conjunction with the Sun; it reached about magnitude −2 on Nov 27 and disintegrated at perihelion on 2013 Nov 28, 0.012 au from the Sun’s centre. The last COBS bin is Nov 18. With the rules of the paper’s forecast test (it is not one of the 25 comets), CO at the subsolar point fits the points before the cut; the forecast rms is 1.29 mag, against 3.67 for the empirical law with fitted <i>n</i> (<i>n</i> = 0.1, the stall) and 1.30 for <i>n</i> = 3.5. The fitted index, frozen in the stall, misses the rise by magnitudes; the energy-limited model does not. It forecasts about magnitude −0.5 for Nov 27 and −10 for perihelion: the comet broke up before. H<sub>N</sub> is a placeholder (the nucleus was less than 1 km across)." }),
+});
+
 // COBS light curves (data/cobs_lightcurves.txt, CC BY-NC-SA 4.0), appended to the presets
 const COBS_HEAD = {
   un271: "# not used in the paper: COBS CCD photometry moved to r′ in 6″ (monthly medians, see the note)",

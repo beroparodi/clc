@@ -17,6 +17,10 @@ Database – CC BY-NC-SA 4.0. We thank the observers worldwide who contributed t
   least 2 values dated at the median time, error sqrt(0.15² + (1.4826 MAD)²/N), bins with an error
   above 0.6 mag dropped. A `%` line before each section gives the record count and bin width. No
   aperture correction: the tool compares them with a fixed aperture of 20 000 km (j = 0).
+* `koh` (C/1973 E1, Kohoutek) and `ison` (C/2012 S1, ISON): binned by the same rule, retrieved 2026
+  November 17; not part of the paper's test. Kohoutek: 250 of 910 records have one of these methods
+  (538 carry no method), October 1973 to March 1974; COBS holds almost nothing earlier. ISON: 516 of
+  573 records, bins up to 2013 November 18.
 * `un271`: total CCD magnitudes (V, R and V-calibrated unfiltered) moved to the paper's system,
   r′ in a 6″ radius aperture: the stated photometric aperture is read as a diameter (it equals
   the coma diameter in 301 of 305 records), the nucleus is removed, the coma flux is scaled by

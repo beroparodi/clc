@@ -1,4 +1,4 @@
-// Forecast test of the fifteen added comets with the tool's own model code: the presets carry K, the ice
+// Forecast test of the comets that carry a cut (the fifteen added to the paper's test, Kohoutek and ISON) with the tool's own model code: the presets carry K, the ice
 // and the cut of the paper (first half); the empirical law is fitted to the first half; run: node test/forecast_check.js
 const M = require('../src/model.js'), fs = require('fs');
 const html = fs.readFileSync(__dirname + '/../index.html', 'utf8');
