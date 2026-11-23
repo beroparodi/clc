@@ -6,14 +6,25 @@ const ICE_VAR = { CO: "--co", CO2: "--co2", H2O: "--h2o" };
 const SCEN = [
   { x: "CO", c: 1, lab: "CO, subsolar" }, { x: "CO2", c: 1, lab: "CO₂, subsolar" }, { x: "CO2", c: 0.25, lab: "CO₂, isothermal" },
   { x: "H2O", c: 1, lab: "H₂O, subsolar" }, { x: "H2O", c: 0.25, lab: "H₂O, isothermal" }];
+// two ices on separate patches (Eq. 17), both at the subsolar point; the share k is fitted
+const PAIRS = [
+  { x: "CO", y: "H2O", c: 1, lab: "CO + H₂O, subsolar" }, { x: "CO2", y: "H2O", c: 1, lab: "CO₂ + H₂O, subsolar" },
+  { x: "CO", y: "CO2", c: 1, lab: "CO + CO₂, subsolar" }];
+const keyOf = (sc) => sc.x + (sc.y || "") + sc.c;
+// ranking of fits: chi2_nu; a fit with as many constants as points cannot win, and a pair must do clearly better
+const rankOf = (f, sc) => (f.nu > 0 ? f.score : Infinity) * (sc && sc.y ? 1.001 : 1);
+// the ices of the model: one ice, or two on separate patches with dust shares k and 1 - k
+function mixFrom(x, y, k) { return !y || y === "none" || y === x ? [{ x, w: 1 }] : [{ x, w: k }, { x: y, w: 1 - k }]; }
+function mixOf(P) { return mixFrom(P.ice, P.ice2, P.k); }
+function mixName(P) { return P.ice2 && P.ice2 !== "none" && P.ice2 !== P.ice ? `${ICE_NAME[P.ice]} + ${ICE_NAME[P.ice2]}` : ICE_NAME[P.ice]; }
 
 const PRESETS = {
   un271: {
     orbit: { q: "10.94525581", e: "0.99869477", i: "95.55335892", Om: "190.0846361196", w: "326.33161880945", T: fmtDT(msOf(2462892.9068)) },
     ice: "CO2", cz: 1, HN: 8.40, beta: 0.04, lk: Math.log10(4.110e6), j: 1, ap: 6, msun: -26.93, y0: 2010, y1: 2036, ref: "2024-02-15", view: "mag", cut: "2024-06-01",
     obs: "# r′ magnitude in a 6″ radius aperture\n2021-12-15 18.99 0.05  # LOOK, Oct 2021–Feb 2022 (Kelley et al. 2022)\n2024-02-15 17.38 0.03  # LCO, Feb 2024 (Roth et al. 2025)",
-    nbox: { r0: 16.70, r1: 19.53, n: 9.0, s: 0.4 },
-    note: "Nucleus 120–140 km across (H<sub>N</sub> = 8.40 in r′). The paper anchors K on the 2024 point with CO₂ at the subsolar point (μ = 271). The later points are monthly medians of amateur CCD photometry from COBS (2024 Oct – 2026 Nov), not fitted: each magnitude, measured in a 8–73″ aperture, is converted to r′ in 6″ by removing the nucleus, scaling the coma flux by 6″/ρ (a steady coma) and taking V − r′ = 0.22. Converted this way they follow the CO₂ forecast (median offset 0.00 mag), while the empirical law through the two professional points, with a constant n, is about 0.45 mag too bright. The conversion is uncertain by about half a magnitude: the main observer’s apertures suggest a coma flux growing as ρ<sup>0.6</sup>, which would make the points 0.65 mag brighter and favor the constant n. Clear “fit only before” to fit all points."
+    nbox: { r0: 16.70, r1: 19.4, n: 9.6, s: 0.3 },        // the coma index measured between the two points (Sec. VII)
+    note: "Nucleus 120–140 km across (H<sub>N</sub> = 8.40 in r′). K is anchored on the 2024 point with CO₂ at the subsolar point (μ = 271), as in Fig. 4c of the paper. The later points are monthly medians of amateur CCD photometry from COBS (2024 Oct – 2026 Nov), not fitted: each magnitude, measured in a 8–73″ aperture, is converted to r′ in 6″ by removing the nucleus, scaling the coma flux by 6″/ρ (a steady coma) and taking V − r′ = 0.22. Converted this way they follow the CO₂ forecast (median offset 0.00 mag), while the empirical law through the two professional points, with a constant n, is about 0.45 mag too bright. The conversion is uncertain by about half a magnitude: the main observer’s apertures suggest a coma flux growing as ρ<sup>0.6</sup>, which would make the points 0.65 mag brighter and favor the constant n. Clear “fit only before” to fit all points."
   },
   t5: {
     orbit: { q: "3.84251371", e: "1.00240368", i: "52.38681511", Om: "100.67985066075", w: "352.41723883275", T: "2027-05-06 02:38" },
@@ -42,8 +53,8 @@ Object.assign(PRESETS, {
     { ice: "H2O", HN: 15.99, y0: 2026, y1: 2031, ref: "2027-01-01",
       note: "Rosetta’s comet; next perihelion 2028 Apr 9 at 1.21 au. H<sub>N</sub> from the mean radius 1.65 km and p<sub>V</sub> = 0.065; K is a placeholder." }),
   p12: MORE({ q: "0.78086475", e: "0.95456023", i: "74.19083929", Om: "255.85505059528", w: "198.98800614657", T: fmtDT(msOf(2460421.6316)) },
-    { lk: 5.085, ice: "H2O", HN: 13, y0: 2022, y1: 2026, ref: "2023-07-09",
-      note: "Halley-type comet with a 71-year period and repeated outbursts before its perihelion of 2024 Apr 21 at 0.78 au. Its nucleus is not measured: H<sub>N</sub> is a placeholder; K is fitted to the COBS magnitudes, which show the 2023 outbursts above the water curve." }),
+    { lk: 5.124, ice: "H2O", HN: 13, y0: 2022, y1: 2026, ref: "2023-07-09", cut: "2024-01-01",
+      note: "Halley-type comet with a 71-year period and repeated outbursts before its perihelion of 2024 Apr 21 at 0.78 au. As in Fig. 4b of the paper, both laws are fitted to the rise up to the end of 2023 (2.1 au): the empirical law gives <i>n</i> = 8.8 and misses the rest by 5.0 mag, water ice by 0.5 mag. The outbursts of 2023 stand above the water curve. Its nucleus is not measured: H<sub>N</sub> is a placeholder; K is fitted to the COBS magnitudes before the cut." }),
   a3: MORE({ q: "0.39145906", e: "1.00012475", i: "139.11502467", Om: "21.558609111275", w: "308.4872848828", T: fmtDT(msOf(2460581.2353)) },
     { lk: 4.571, ice: "CO2", HN: 15, y0: 2023, y1: 2026, ref: "2024-01-22",
       note: "The bright comet of October 2024; perihelion 2024 Sep 27 at 0.39 au on a nearly parabolic orbit. H<sub>N</sub> is a placeholder; K is fitted to the COBS magnitudes. CO₂ fits the whole arc far better than water (χ²<sub>ν</sub> 19 against 120): it was active at 7 au." }),
@@ -51,8 +62,8 @@ Object.assign(PRESETS, {
     { lk: 4.379, ice: "H2O", HN: 15, y0: 2019, y1: 2022, ref: "2019-11-03",
       note: "The bright comet of July 2020; perihelion 2020 Jul 3 at 0.29 au. Its peak water production needs a nucleus of at least 3.5 km radius: see the energy budget below. H<sub>N</sub> is a placeholder; K is fitted to the COBS magnitudes. The faint points in April 2020 are small-aperture CCD magnitudes." }),
   hb: MORE({ q: "0.9141", e: "0.9951", i: "89.43", Om: "282.47", w: "130.59", T: "1997-04-01 03:19" },
-    { lk: 7.292, ice: "CO", HN: 11.39, y0: 1995, y1: 2000, ref: "1995-07-23",
-      note: "The Great Comet of 1997. It was discovered on 1995 Jul 23 at 7.1 au, far beyond the water zone: compare CO with water. Perihelion 1997 Apr 1 at 0.91 au. H<sub>N</sub> for a nucleus 35 km across (30–40 km) and p = 0.04; K is fitted to the COBS magnitudes 1995–1999. Constant-area CO follows them over four years (χ²<sub>ν</sub> ≈ 3); water alone does not (Compare ices)." }),
+    { lk: 7.324, split: true, post: { lk: 7.2718, k: 1 }, ice: "CO", HN: 11.39, y0: 1995, y1: 2000, ref: "1995-07-23",
+      note: "The Great Comet of 1997, discovered on 1995 Jul 23 at 7.1 au, far beyond the water zone; perihelion 1997 Apr 1 at 0.91 au. H<sub>N</sub> for a nucleus 35 km across (30–40 km) and p = 0.04. As in Fig. 3b of the paper, CO and the empirical law are fitted separately before and after perihelion: rms 0.31 and 0.24 mag, <i>n</i> = 3.1 and 3.5, and the active area after perihelion is 0.89 times that before. Water alone does not fit (Compare ices). For the forecast of Fig. 4a, untick “before and after perihelion”, enter 1996-03-15 under “fit only before” and Fit: the empirical law (<i>n</i> = 4.6) misses the rest by 1.2 mag, CO by 0.4 mag." }),
   hyak: MORE({ q: "0.23022353", e: "0.99989165", i: "124.92204939", Om: "188.04513199216", w: "130.1751209781", T: fmtDT(msOf(2450204.8941)) },
     { lk: 4.804, ice: "H2O", HN: 15.71, y0: 1996, y1: 1997, ref: "1996-01-30", view: "mag", cursor: "1996-03-25",
       note: "The Great Comet of 1996. Discovered on 1996 Jan 30, it passed 0.10 au from the Earth on Mar 25, five weeks before perihelion at 0.23 au: the magnitude view shows the close approach. H<sub>N</sub> from the radar nucleus (D ≈ 4.8 km, p = 0.04); K is fitted to the COBS magnitudes. Its SWAN water exponents are the points at q = 0.23 au below." }),
@@ -61,68 +72,68 @@ Object.assign(PRESETS, {
       note: "The third interstellar object, on a hyperbola with e = 6.14; perihelion 2025 Oct 29 at 1.36 au. H<sub>N</sub> from R<sub>N</sub> = 1.3 km and p = 0.04; K is fitted to the COBS magnitudes. Its water production exceeds what this nucleus can deliver: see the energy budget below." }),
 });
 
-// comets added to the paper's forecast test (Sec. III C): ice and K from the first half, cut at the split
+// comets of our forecast test of 25 light curves (supplementary material): ice and K from the first half, cut at the split
 Object.assign(PRESETS, {
   q2: MORE({ q: "1.290358238881392", e: "0.9977738520356274", i: "80.30130181438155", Om: "94.97505909428631", w: "12.39526184803142", T: fmtDT(msOf(2457052.569249606)) },
     { lk: 5.188, ice: "H2O", cz: 0.25, HN: 15, y0: 2014, y1: 2016, ref: "2014-10-03", cut: "2015-04-08",
-      note: "The bright green comet of January 2015; perihelion 2015 Jan 30 at 1.29 au. In the paper’s forecast test of 25 comets, water on an isothermal nucleus fits the points before the cut; the forecast rms is 4.19 mag, against 5.51 for the empirical law with fitted <i>n</i> (<i>n</i> = 10.4) and 1.36 for <i>n</i> = 3.5: the chosen ice switches on within the fitted half. H<sub>N</sub> is a placeholder." }),
+      note: "The bright green comet of January 2015; perihelion 2015 Jan 30 at 1.29 au. In our forecast test of 25 comets, water on an isothermal nucleus fits the points before the cut; the forecast rms is 4.19 mag, against 5.51 for the empirical law with fitted <i>n</i> (<i>n</i> = 10.4) and 1.36 for <i>n</i> = 3.5: the chosen ice switches on within the fitted half. H<sub>N</sub> is a placeholder." }),
   k2: MORE({ q: "1.797281961376049", e: "1.000616562373503", i: "87.55487509681637", Om: "88.24109127986824", w: "236.1923489989567", T: fmtDT(msOf(2459933.227066954)) },
     { lk: 5.956, ice: "CO", cz: 1, HN: 15, y0: 2018, y1: 2026, ref: "2018-03-22", cut: "2021-12-04",
-      note: "Active at 16 au; perihelion 2022 Dec 19 at 1.80 au. In the paper’s forecast test of 25 comets, CO at the subsolar point fits the points before the cut; the forecast rms is 1.65 mag, against 1.22 for the empirical law with fitted <i>n</i> (<i>n</i> = 2.9) and 1.65 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
+      note: "Active at 16 au; perihelion 2022 Dec 19 at 1.80 au. In our forecast test of 25 comets, CO at the subsolar point fits the points before the cut; the forecast rms is 1.65 mag, against 1.22 for the empirical law with fitted <i>n</i> (<i>n</i> = 2.9) and 1.65 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
   t2: MORE({ q: "1.615095955888523", e: "0.9996765980850288", i: "57.23142385337199", Om: "64.37877215685057", w: "92.99331253710214", T: fmtDT(msOf(2458974.449996825)) },
     { lk: 4.649, ice: "CO", cz: 1, HN: 15, y0: 2018, y1: 2021, ref: "2018-11-12", cut: "2019-12-30",
-      note: "Perihelion 2020 May 4 at 1.62 au. In the paper’s forecast test of 25 comets, CO at the subsolar point fits the points before the cut; the forecast rms is 0.38 mag, against 0.42 for the empirical law with fitted <i>n</i> (<i>n</i> = 3.2) and 0.38 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
+      note: "Perihelion 2020 May 4 at 1.62 au. In our forecast test of 25 comets, CO at the subsolar point fits the points before the cut; the forecast rms is 0.38 mag, against 0.42 for the empirical law with fitted <i>n</i> (<i>n</i> = 3.2) and 0.38 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
   p1: MORE({ q: "1.550535584223489", e: "1.000997435576857", i: "106.1772916768743", Om: "325.9972285528648", w: "90.74706541748093", T: fmtDT(msOf(2455919.177555371)) },
     { lk: 5.554, ice: "CO", cz: 1, HN: 15, y0: 2010, y1: 2013, ref: "2010-11-08", cut: "2011-10-16",
-      note: "C/2009 P1 (Garradd), perihelion 2011 Dec 23 at 1.55 au and bright for months afterwards. In the paper’s forecast test of 25 comets, CO at the subsolar point fits the points before the cut; the forecast rms is 0.50 mag, against 0.20 for the empirical law with fitted <i>n</i> (<i>n</i> = 2.6) and 0.50 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
+      note: "C/2009 P1 (Garradd), perihelion 2011 Dec 23 at 1.55 au and bright for months afterwards. In our forecast test of 25 comets, CO at the subsolar point fits the points before the cut; the forecast rms is 0.50 mag, against 0.20 for the empirical law with fitted <i>n</i> (<i>n</i> = 2.6) and 0.50 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
   e3: MORE({ q: "1.11224437022534", e: "1.000301905819192", i: "109.169480756749", Om: "302.5550197168474", w: "145.81492879", T: fmtDT(msOf(2459957.28519883)) },
     { lk: 4.062, ice: "H2O", cz: 1, HN: 15, y0: 2022, y1: 2024, ref: "2022-04-13", cut: "2022-10-22",
-      note: "The green comet of early 2023; perihelion 2023 Jan 12 at 1.11 au. In the paper’s forecast test of 25 comets, water at the subsolar point fits the points before the cut; the forecast rms is 0.30 mag, against 0.48 for the empirical law with fitted <i>n</i> (<i>n</i> = 4.6) and 0.60 for <i>n</i> = 3.5: the chosen ice switches on within the fitted half. H<sub>N</sub> is a placeholder." }),
+      note: "The green comet of early 2023; perihelion 2023 Jan 12 at 1.11 au. In our forecast test of 25 comets, water at the subsolar point fits the points before the cut; the forecast rms is 0.30 mag, against 0.48 for the empirical law with fitted <i>n</i> (<i>n</i> = 4.6) and 0.60 for <i>n</i> = 3.5: the chosen ice switches on within the fitted half. H<sub>N</sub> is a placeholder." }),
   l3: MORE({ q: "3.554492702308672", e: "1.001405275505796", i: "48.36374698279935", Om: "290.7888867057587", w: "171.6137051016775", T: fmtDT(msOf(2459589.132623246)) },
-    { lk: 5.389, ice: "CO2", cz: 0.25, HN: 15, y0: 2020, y1: 2024, ref: "2020-01-06", cut: "2021-10-04",
-      note: "Active from 8 au; perihelion 2022 Jan 9 at 3.55 au. In the paper’s forecast test of 25 comets, CO₂ on an isothermal nucleus fits the points before the cut; the forecast rms is 1.77 mag, against 1.53 for the empirical law with fitted <i>n</i> (<i>n</i> = 7.5) and 1.86 for <i>n</i> = 3.5: the chosen ice switches on within the fitted half. H<sub>N</sub> is a placeholder." }),
+    { lk: 6.035, ice: "CO", ice2: "H2O", k: 0.04, split: true, post: { lk: 6.0265, k: 0.897 }, cz: 1, HN: 15, y0: 2020, y1: 2024, ref: "2020-01-06",
+      note: "Active from 8 au; perihelion 2022 Jan 9 at 3.55 au. As in Fig. 3c of the paper, CO and water ice on separate patches are fitted before perihelion (rms 0.26 mag, k = 0.04). No single ice fits the steep rise (<i>n</i> = 7.8): with 2022-01-09 under “fit only before”, Compare ices gives χ²<sub>ν</sub> = 2.7 for the pair and 22 or more for any single ice. Far out, CO supplied the dust; as water switched on, its share grew and the index rose. After perihelion the comet faded slowly (<i>n</i> = 3.6) and the fit gives k = 0.90, as if its water patches had stopped working. In our forecast test of 25 comets (cut 2021-10-04), CO₂ on an isothermal nucleus fits the points before the cut; the forecast rms is 1.77 mag, against 1.53 for the empirical law with fitted <i>n</i> (<i>n</i> = 7.5) and 1.86 for <i>n</i> = 3.5. H<sub>N</sub> is a placeholder." }),
   l4: MORE({ q: "0.3015442238164768", e: "1.000032767108972", i: "84.20819702923397", Om: "65.6658863915034", w: "333.6516376633611", T: fmtDT(msOf(2456361.669960002)) },
     { lk: 5.056, ice: "CO", cz: 1, HN: 15, y0: 2012, y1: 2014, ref: "2012-05-22", cut: "2013-03-05",
-      note: "C/2011 L4 (PANSTARRS), a naked-eye comet in March 2013; perihelion 2013 Mar 10 at 0.30 au. In the paper’s forecast test of 25 comets, CO at the subsolar point fits the points before the cut; the forecast rms is 0.96 mag, against 0.92 for the empirical law with fitted <i>n</i> (<i>n</i> = 2.9) and 0.96 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
+      note: "C/2011 L4 (PANSTARRS), a naked-eye comet in March 2013; perihelion 2013 Mar 10 at 0.30 au. In our forecast test of 25 comets, CO at the subsolar point fits the points before the cut; the forecast rms is 0.96 mag, against 0.92 for the empirical law with fitted <i>n</i> (<i>n</i> = 2.9) and 0.96 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
   a6: MORE({ q: "0.5299041302912412", e: "0.9955362293967411", i: "143.663707214442", Om: "108.0979873301086", w: "132.9688404751593", T: fmtDT(msOf(2460988.039387102)) },
     { lk: 4.196, ice: "CO", cz: 1, HN: 15, y0: 2025, y1: 2027, ref: "2025-08-26", cut: "2026-01-17",
-      note: "C/2025 A6 (Lemmon), bright in October 2025; perihelion 2025 Nov 8 at 0.53 au. In the paper’s forecast test of 25 comets, CO at the subsolar point fits the points before the cut; the forecast rms is 1.37 mag, against 1.47 for the empirical law with fitted <i>n</i> (<i>n</i> = 3.3) and 1.37 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
+      note: "C/2025 A6 (Lemmon), bright in October 2025; perihelion 2025 Nov 8 at 0.53 au. In our forecast test of 25 comets, CO at the subsolar point fits the points before the cut; the forecast rms is 1.37 mag, against 1.47 for the empirical law with fitted <i>n</i> (<i>n</i> = 3.3) and 1.37 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
   v2j: MORE({ q: "1.636950053071025", e: "1.001702614530096", i: "49.87481167153636", Om: "69.8521003063327", w: "164.8980978916873", T: fmtDT(msOf(2457916.847458616)) },
     { lk: 4.625, ice: "CO", cz: 1, HN: 15, y0: 2016, y1: 2019, ref: "2016-02-10", cut: "2017-01-26",
-      note: "C/2015 V2 (Johnson), perihelion 2017 Jun 12 at 1.64 au. In the paper’s forecast test of 25 comets, CO at the subsolar point fits the points before the cut; the forecast rms is 0.62 mag, against 0.24 for the empirical law with fitted <i>n</i> (<i>n</i> = 2.5) and 0.62 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
+      note: "C/2015 V2 (Johnson), perihelion 2017 Jun 12 at 1.64 au. In our forecast test of 25 comets, CO at the subsolar point fits the points before the cut; the forecast rms is 0.62 mag, against 0.24 for the empirical law with fitted <i>n</i> (<i>n</i> = 2.5) and 0.62 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
   v2z: MORE({ q: "2.227959873700067", e: "1.00089953037377", i: "131.6110418896687", Om: "212.3712351547342", w: "162.4243172377264", T: fmtDT(msOf(2460073.056589952)) },
     { lk: 5.168, ice: "CO2", cz: 0.25, HN: 15, y0: 2021, y1: 2026, ref: "2021-03-09", cut: "2023-03-28",
-      note: "C/2020 V2 (ZTF), active beyond 8 au; perihelion 2023 May 8 at 2.23 au. In the paper’s forecast test of 25 comets, CO₂ on an isothermal nucleus fits the points before the cut; the forecast rms is 0.76 mag, against 0.64 for the empirical law with fitted <i>n</i> (<i>n</i> = 4.1) and 0.46 for <i>n</i> = 3.5: the chosen ice switches on within the fitted half. H<sub>N</sub> is a placeholder." }),
+      note: "C/2020 V2 (ZTF), active beyond 8 au; perihelion 2023 May 8 at 2.23 au. In our forecast test of 25 comets, CO₂ on an isothermal nucleus fits the points before the cut; the forecast rms is 0.76 mag, against 0.64 for the empirical law with fitted <i>n</i> (<i>n</i> = 4.1) and 0.46 for <i>n</i> = 3.5: the chosen ice switches on within the fitted half. H<sub>N</sub> is a placeholder." }),
   us10: MORE({ q: "0.8229694514684749", e: "1.000280139519764", i: "148.8782967756639", Om: "186.1445797203693", w: "340.358754276709", T: fmtDT(msOf(2457342.221641829)) },
     { lk: 5.003, ice: "CO", cz: 1, HN: 15, y0: 2014, y1: 2017, ref: "2014-06-19", cut: "2015-08-22",
-      note: "C/2013 US10 (Catalina), first seen by amateurs at 8.2 au; perihelion 2015 Nov 15 at 0.82 au. In the paper’s forecast test of 25 comets, CO at the subsolar point fits the points before the cut; the forecast rms is 1.21 mag, against 1.11 for the empirical law with fitted <i>n</i> (<i>n</i> = 3.1) and 1.21 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
+      note: "C/2013 US10 (Catalina), first seen by amateurs at 8.2 au; perihelion 2015 Nov 15 at 0.82 au. In our forecast test of 25 comets, CO at the subsolar point fits the points before the cut; the forecast rms is 1.21 mag, against 1.11 for the empirical law with fitted <i>n</i> (<i>n</i> = 3.1) and 1.21 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
   k1: MORE({ q: "1.054597098294", e: "1.000152915493971", i: "142.4282581726916", Om: "317.7376491689354", w: "203.1066008825931", T: fmtDT(msOf(2456897.160363006)) },
     { lk: 4.816, ice: "CO", cz: 1, HN: 15, y0: 2013, y1: 2016, ref: "2013-03-24", cut: "2014-04-28",
-      note: "C/2012 K1 (PANSTARRS), first seen by amateurs at 8.7 au; perihelion 2014 Aug 27 at 1.05 au. In the paper’s forecast test of 25 comets, CO at the subsolar point fits the points before the cut; the forecast rms is 0.58 mag, against 0.45 for the empirical law with fitted <i>n</i> (<i>n</i> = 3.0) and 0.58 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
+      note: "C/2012 K1 (PANSTARRS), first seen by amateurs at 8.7 au; perihelion 2014 Aug 27 at 1.05 au. In our forecast test of 25 comets, CO at the subsolar point fits the points before the cut; the forecast rms is 0.58 mag, against 0.45 for the empirical law with fitted <i>n</i> (<i>n</i> = 3.0) and 0.58 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
   g2: MORE({ q: "4.982360288479666", e: "1.000603552652205", i: "48.46954508656729", Om: "221.095294828915", w: "343.2672327577748", T: fmtDT(msOf(2460562.634007078)) },
     { lk: 5.195, ice: "CO2", cz: 1, HN: 15, y0: 2023, y1: 2027, ref: "2023-04-13", cut: "2025-05-20",
-      note: "C/2021 G2 (ATLAS), a distant comet that came no closer than 4.98 au (perihelion 2024 Sep 9). In the paper’s forecast test of 25 comets, CO₂ at the subsolar point fits the points before the cut; the forecast rms is 0.33 mag, against 0.37 for the empirical law with fitted <i>n</i> (<i>n</i> = 4.0) and 0.28 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
+      note: "C/2021 G2 (ATLAS), a distant comet that came no closer than 4.98 au (perihelion 2024 Sep 9). In our forecast test of 25 comets, CO₂ at the subsolar point fits the points before the cut; the forecast rms is 0.33 mag, against 0.37 for the empirical law with fitted <i>n</i> (<i>n</i> = 4.0) and 0.28 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
   e2: MORE({ q: "3.666295808424358", e: "1.001060418168188", i: "137.1316685887328", Om: "125.3761151010601", w: "41.72559864492467", T: fmtDT(msOf(2460567.63388719)) },
     { lk: 4.762, ice: "CO", cz: 1, HN: 15, y0: 2023, y1: 2027, ref: "2023-01-18", cut: "2025-02-01",
-      note: "C/2022 E2 (ATLAS), first seen by amateurs at 7.8 au; perihelion 2024 Sep 14 at 3.67 au. In the paper’s forecast test of 25 comets, CO at the subsolar point fits the points before the cut; the forecast rms is 0.86 mag, against 0.92 for the empirical law with fitted <i>n</i> (<i>n</i> = 3.2) and 0.86 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
+      note: "C/2022 E2 (ATLAS), first seen by amateurs at 7.8 au; perihelion 2024 Sep 14 at 3.67 au. In our forecast test of 25 comets, CO at the subsolar point fits the points before the cut; the forecast rms is 0.86 mag, against 0.92 for the empirical law with fitted <i>n</i> (<i>n</i> = 3.2) and 0.86 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
   n2: MORE({ q: "3.825529163602361", e: "1.003236448782429", i: "5.503022530288324", Om: "319.7406957022052", w: "75.38965400185295", T: fmtDT(msOf(2460888.270675301)) },
     { lk: 4.354, ice: "CO2", cz: 1, HN: 15, y0: 2023, y1: 2027, ref: "2023-10-17", cut: "2025-08-08",
-      note: "C/2022 N2 (PANSTARRS), first seen by amateurs at 7.0 au; perihelion 2025 Jul 31 at 3.83 au. In the paper’s forecast test of 25 comets, CO₂ at the subsolar point fits the points before the cut; the forecast rms is 0.32 mag, against 0.33 for the empirical law with fitted <i>n</i> (<i>n</i> = 3.9) and 0.32 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
+      note: "C/2022 N2 (PANSTARRS), first seen by amateurs at 7.0 au; perihelion 2025 Jul 31 at 3.83 au. In our forecast test of 25 comets, CO₂ at the subsolar point fits the points before the cut; the forecast rms is 0.32 mag, against 0.33 for the empirical law with fitted <i>n</i> (<i>n</i> = 3.9) and 0.32 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
 });
 
-// two famous disappointments, run through the rules of the paper's forecast test (not among its 25 comets)
+// two famous disappointments, run through the rules of the forecast test (not among its 25 comets)
 Object.assign(PRESETS, {
   koh: MORE({ q: "0.1424250322974156", e: "1.000007809885518", i: "14.3041449344601", Om: "258.4894909953879", w: "37.79756893411028", T: fmtDT(msOf(2442044.930683474144)) },
     { lk: 4.8026, ice: "CO", cz: 1, HN: 15, y0: 1973, y1: 1975, ref: "1973-10-06", cut: "1974-01-08",
-      note: "The “comet of the century” of 1973 that disappointed. Discovered on 1973 Mar 18 at 4.6 au; extrapolations with a fixed index (<i>n</i> = 4 to 6) promised magnitude −10 or brighter, but it peaked near −3 at perihelion on 1973 Dec 28, 0.14 au from the Sun and too close to it for ground observers. COBS holds almost no magnitudes from before October 1973. With the rules of the paper’s forecast test (it is not one of the 25 comets), CO at the subsolar point fits the points before the cut; the forecast rms is 1.55 mag, against 1.46 for the empirical law with fitted <i>n</i> (<i>n</i> = 2.8) and 1.55 for <i>n</i> = 3.5. No law foresees how fast it faded after perihelion: with one μ before and one after, μ<sub>post</sub>/μ<sub>pre</sub> = 0.27. H<sub>N</sub> is a placeholder." }),
+      note: "The “comet of the century” of 1973 that disappointed. Discovered on 1973 Mar 18 at 4.6 au; extrapolations with a fixed index (<i>n</i> = 4 to 6) promised magnitude −10 or brighter, but it peaked near −3 at perihelion on 1973 Dec 28, 0.14 au from the Sun and too close to it for ground observers. COBS holds almost no magnitudes from before October 1973. With the rules of our forecast test (it is not one of the 25 comets), CO at the subsolar point fits the points before the cut; the forecast rms is 1.55 mag, against 1.46 for the empirical law with fitted <i>n</i> (<i>n</i> = 2.8) and 1.55 for <i>n</i> = 3.5. No law foresees how fast it faded after perihelion: with one μ before and one after, μ<sub>post</sub>/μ<sub>pre</sub> = 0.27. H<sub>N</sub> is a placeholder." }),
   ison: MORE({ q: "0.01246672509220626", e: "1.00000509491957", i: "62.16289620932959", Om: "295.6865414817095", w: "345.5411966905318", T: fmtDT(msOf(2456625.264531166622)) },
     { lk: 4.1954, ice: "CO", cz: 1, HN: 15, y0: 2012, y1: 2014, ref: "2012-12-17", cut: "2013-05-06",
-      note: "The sungrazer of 2013, which prompted Parodi (2013), the forerunner of this model. Discovered on 2012 Sep 21 at 6.3 au; early extrapolations promised a comet brighter than the full Moon. Its brightness stalled in the first half of 2013 and rose again after its conjunction with the Sun; it reached about magnitude −2 on Nov 27 and disintegrated at perihelion on 2013 Nov 28, 0.012 au from the Sun’s centre. The last COBS bin is Nov 18. With the rules of the paper’s forecast test (it is not one of the 25 comets), CO at the subsolar point fits the points before the cut; the forecast rms is 1.29 mag, against 3.67 for the empirical law with fitted <i>n</i> (<i>n</i> = 0.1, the stall) and 1.30 for <i>n</i> = 3.5. The fitted index, frozen in the stall, misses the rise by magnitudes; the energy-limited model does not. It forecasts about magnitude −0.5 for Nov 27 and −10 for perihelion: the comet broke up before. H<sub>N</sub> is a placeholder (the nucleus was less than 1 km across)." }),
+      note: "The sungrazer of 2013, which prompted Parodi (2013), the forerunner of this model. Discovered on 2012 Sep 21 at 6.3 au; early extrapolations promised a comet brighter than the full Moon. Its brightness stalled in the first half of 2013 and rose again after its conjunction with the Sun; it reached about magnitude −2 on Nov 27 and disintegrated at perihelion on 2013 Nov 28, 0.012 au from the Sun’s centre. The last COBS bin is Nov 18. With the rules of our forecast test (it is not one of the 25 comets), CO at the subsolar point fits the points before the cut; the forecast rms is 1.29 mag, against 3.67 for the empirical law with fitted <i>n</i> (<i>n</i> = 0.1, the stall) and 1.30 for <i>n</i> = 3.5. The fitted index, frozen in the stall, misses the rise by magnitudes; the energy-limited model does not. It forecasts about magnitude −0.5 for Nov 27 and −10 for perihelion: the comet broke up before. H<sub>N</sub> is a placeholder (the nucleus was less than 1 km across)." }),
 });
 
 // COBS light curves (data/cobs_lightcurves.txt, CC BY-NC-SA 4.0), appended to the presets
 const COBS_HEAD = {
-  un271: "# not used in the paper: COBS CCD photometry moved to r′ in 6″ (monthly medians, see the note)",
+  un271: "# COBS CCD photometry moved to r′ in 6″ (monthly medians, see the note; open circles in Fig. 4c of the paper), not fitted",
   other: "# total magnitudes from COBS (median per bin; CC BY-NC-SA 4.0)" };
 if (typeof COBS === "object") for (const [k, txt] of Object.entries(COBS)) {
   const p = PRESETS[k]; if (!p) continue;
@@ -130,7 +141,7 @@ if (typeof COBS === "object") for (const [k, txt] of Object.entries(COBS)) {
   if (k !== "un271") p.view = "mag";
 }
 
-const S = { view: "mag", cursor: Date.now(), cmp: null, nbox: null, series: null };
+const S = { view: "mag", cursor: Date.now(), cmp: null, nbox: null, series: null, post: null };
 
 // ---------- small helpers
 function num(s) { const v = parseFloat(String(s).replace("−", "-").replace(",", ".")); return Number.isFinite(v) ? v : NaN; }
@@ -170,7 +181,9 @@ function readOrbit() {
   return { ok, q, e, i, Om, w, Tp: jdOf(T), Tms: T, full: ok && [i, Om, w].every(Number.isFinite) };
 }
 function params() {
-  return { ice: document.querySelector('input[name="ice"]:checked').value, cz: +$("cz").value, HN: +$("hn").value, beta: +$("beta").value,
+  const i2 = document.querySelector('input[name="ice2"]:checked');
+  return { ice: document.querySelector('input[name="ice"]:checked').value, ice2: i2 ? i2.value : "none", k: +$("kmix").value, split: $("split").checked,
+    cz: +$("cz").value, HN: +$("hn").value, beta: +$("beta").value,
     lk: +$("lk").value, h: +$("hm").value >= 2.995 ? Infinity : 10 ** +$("hm").value, j: +$("j").value, ap: Math.max(1e-3, num($("ap").value) || 6), msun: Number.isFinite(num($("msun").value)) ? num($("msun").value) : -26.76 };
 }
 function windowMs() {
@@ -200,23 +213,32 @@ function parseObs() {
 }
 
 // ---------- model series over the window
+// the model piece in use at time ms: the sliders, or after perihelion the separate fit (S.post)
+function pieceAt(el, P, ms) {
+  if (P.split && S.post && ms >= el.Tms) { const K = 10 ** S.post.lk; return { mix: mixFrom(P.ice, P.ice2, S.post.k), K, mu: muFrom(K, P), post: true }; }
+  const K = 10 ** P.lk; return { mix: mixOf(P), K, mu: muFrom(K, P), post: false };
+}
+function modelAt(el, P, g, ms) { const pc = pieceAt(el, P, ms), et = etaMix(g.r, pc.mix, P.cz, P.h); return { ...magnitude(g.r, g.D, g.alpha, et, P, pc.mu), et, pc }; }
 function compute() {
   const el = readOrbit(), P = params(), [t0, t1] = windowMs();
   const N = 520, t = [], r = [], D = [], al = [], m = [], mN = [], A = [];
   const K = 10 ** P.lk, mu = muFrom(K, P);
   if (el.ok) for (let k = 0; k <= N; k++) {
-    const ms = t0 + (t1 - t0) * k / N, g = ephem(el, ms), et = eta(g.r, P.ice, P.cz, P.h);
-    t.push(ms); r.push(g.r); D.push(g.D); al.push(g.alpha); A.push(afrho(K, g.r, et));
-    if (el.full) { const mg = magnitude(g.r, g.D, g.alpha, et, P, mu); m.push(mg.m); mN.push(mg.mN); } else { m.push(NaN); mN.push(NaN); }
+    const ms = t0 + (t1 - t0) * k / N, g = ephem(el, ms), pc = pieceAt(el, P, ms), et = etaMix(g.r, pc.mix, P.cz, P.h);
+    t.push(ms); r.push(g.r); D.push(g.D); al.push(g.alpha); A.push(afrho(pc.K, g.r, et));
+    if (el.full) { const mg = magnitude(g.r, g.D, g.alpha, et, P, pc.mu); m.push(mg.m); mN.push(mg.mN); } else { m.push(NaN); mN.push(NaN); }
   }
-  let emp = null, mE = [];
+  let emp = null, empPost = null, mE = [];
   if (el.full && $("emp").checked) {
     const cut = cutMs(), pts = parseObs().obs.filter((o) => o.ms < cut).map((o) => { const g = ephem(el, o.ms); return { ...o, r: g.r, D: g.D }; });
-    emp = fitEmp(pts); if (emp) mE = r.map((rv, k) => empMag(emp, rv, D[k]));
+    if (P.split) { emp = fitEmp(pts.filter((o) => o.ms < el.Tms)); empPost = fitEmp(pts.filter((o) => o.ms >= el.Tms)); }
+    else emp = fitEmp(pts);
+    if (emp || empPost) mE = r.map((rv, k) => { const f = t[k] >= el.Tms && empPost ? empPost : emp || empPost; return empMag(f, rv, D[k]); });
   }
-  S.series = { el, P, t0, t1, t, r, D, al, m, mN, A, K, mu, emp, mE };
+  S.series = { el, P, t0, t1, t, r, D, al, m, mN, A, K, mu, emp, empPost, mE };
   return S.series;
 }
+function empAt(s, ms) { return ms >= s.el.Tms && s.empPost ? s.empPost : s.emp || s.empPost; }
 
 // ---------- canvas plumbing
 function frame(cv, ar, minH, maxH) {
@@ -265,7 +287,7 @@ function drawLC() {
   const cv = $("c1"), { g, w, h } = frame(cv, 0.44, 280, 460), s = S.series, P = s.P;
   const box = { l: 52, r: w - 14, t: 16, b: h - 40 };
   const X = lin(s.t0, s.t1, box.l, box.r);
-  const iceC = css(ICE_VAR[P.ice]), ink = css("--ink"), mute = css("--mute"), ghost = css("--ghost"), obsC = css("--obs"), acc = css("--accent");
+  const two = mixOf(P).length > 1, iceC = two ? css("--ink") : css(ICE_VAR[P.ice]), ink = css("--ink"), mute = css("--mute"), ghost = css("--ghost"), obsC = css("--obs"), acc = css("--accent");
   const span = (s.t1 - s.t0) / (365.25 * DAY), st = span > 30 ? 5 : span > 12 ? 2 : span > 6 ? 1 : 0.5;
   const xt = []; for (let y = Math.ceil(yearOf(s.t0) / st) * st; y <= yearOf(s.t1) + 1e-9; y += st) xt.push(msOfYear(y));
   const xf = (v) => st < 1 ? (Math.abs(yearOf(v) % 1) < 1e-6 ? String(Math.round(yearOf(v))) : fmtD(v).slice(0, 7)) : String(Math.round(yearOf(v)));
@@ -285,7 +307,7 @@ function drawLC() {
     axes(g, X, Y, { xt, xf, yt: linTicks(lo, hi, 6), yl: "magnitude" });
     clip(g, X, Y);
     path(g, s.t, s.mN, X, Y, { c: ghost, w: 1.5, dash: [5, 4] });
-    if (s.emp) path(g, s.t, s.mE, X, Y, { c: ink, w: 1.7, dash: [7, 3, 2, 3] });
+    if (s.emp || s.empPost) path(g, s.t, s.mE, X, Y, { c: ink, w: 1.7, dash: [7, 3, 2, 3] });
     path(g, s.t, s.m, X, Y, { c: iceC, w: 2.4 });
     const cut = cutMs(), test = [];
     g.fillStyle = obsC; g.strokeStyle = obsC; g.lineWidth = 1.2;
@@ -298,16 +320,19 @@ function drawLC() {
     let tst = "";
     if (test.length && Number.isFinite(cut)) {
       const rms = (f) => Math.sqrt(test.reduce((a, o) => { const gg = ephem(s.el, o.ms), d = o.m - f(gg); return a + d * d; }, 0) / test.length);
-      const rm = rms((gg) => magnitude(gg.r, gg.D, gg.alpha, eta(gg.r, P.ice, P.cz, P.h), P, s.mu).m), re = s.emp ? rms((gg) => empMag(s.emp, gg.r, gg.D)) : NaN;
+      const rmsT = (f) => Math.sqrt(test.reduce((a, o) => { const gg = ephem(s.el, o.ms), d = o.m - f(gg, o.ms); return a + d * d; }, 0) / test.length);
+      const rm = rmsT((gg, ms) => modelAt(s.el, P, gg, ms).m), hasE = s.emp || s.empPost, re = hasE ? rmsT((gg, ms) => empMag(empAt(s, ms), gg.r, gg.D)) : NaN;
       S.forecast = { n: test.length, model: rm, emp: re };
-      tst = ` <span class="key">forecast rms: model ${rm.toFixed(2)}${s.emp ? `, empirical ${re.toFixed(2)}` : ""} mag</span>`;
+      tst = ` <span class="key">forecast rms: model ${rm.toFixed(2)}${hasE ? `, empirical ${re.toFixed(2)}` : ""} mag</span>`;
     } else S.forecast = null;
-    $("key1").innerHTML = `<span class="key"><span class="sw" style="border-top-color:${iceC}"></span>${ICE_NAME[P.ice]} model</span>` + (s.emp ? ` <span class="key"><span class="sw e"></span>empirical law, <i>n</i> = ${mi(s.emp.n.toFixed(1))}</span>` : "") +
+    const nTxt = s.emp && s.empPost ? `${mi(s.emp.n.toFixed(1))} | ${mi(s.empPost.n.toFixed(1))}` : (s.emp || s.empPost) ? mi((s.emp || s.empPost).n.toFixed(1)) : "";
+    const splitTxt = P.split && S.post ? " (before | after perihelion)" : "";
+    $("key1").innerHTML = `<span class="key"><span class="sw" style="border-top-color:${iceC}"></span>${mixName(P)} model${splitTxt}</span>` + (nTxt ? ` <span class="key"><span class="sw e"></span>empirical law, <i>n</i> = ${nTxt}</span>` : "") +
       ` <span class="key"><span class="sw d"></span>nucleus alone</span> <span class="key"><span class="dot"></span>observed</span>` + (test.length && Number.isFinite(cut) ? ` <span class="key"><span class="ring"></span>after the cut</span>` + tst : "");
   } else {
     const ref = refMs(s), r0 = ephem(s.el, ref).r;
     const series = SCEN.map((sc) => s.r.map((r) => eta(r, sc.x, sc.c, P.h) / eta(r0, sc.x, sc.c, P.h) * (r / r0) ** -1.5));
-    const cur = s.r.map((r) => eta(r, P.ice, P.cz, P.h) / eta(r0, P.ice, P.cz, P.h) * (r / r0) ** -1.5);
+    const mx = mixOf(P), cur = s.r.map((r) => etaMix(r, mx, P.cz, P.h) / etaMix(r0, mx, P.cz, P.h) * (r / r0) ** -1.5);
     let lo = Infinity, hi = -Infinity;
     [cur, ...series].forEach((a) => a.forEach((v) => { if (v > 0 && Number.isFinite(v)) { lo = Math.min(lo, v); hi = Math.max(hi, v); } }));
     lo = Math.max(lo, 1e-4); hi = Math.min(Math.max(hi, 2), 1e6);
@@ -320,7 +345,7 @@ function drawLC() {
     const xr = X(ref); g.strokeStyle = mute; g.setLineDash([2, 3]); g.beginPath(); g.moveTo(xr, box.t); g.lineTo(xr, box.b); g.stroke(); g.setLineDash([]);
     g.fillStyle = mute; g.font = FONTS; g.textAlign = "left"; g.fillText("ref", xr + 4, box.b - 6);
     g.restore();
-    $("key1").innerHTML = `<span class="key"><span class="sw" style="border-top-color:${iceC}"></span>chosen ice</span> <span class="key"><span class="sw" style="border-top-color:${ghost}"></span>other ices, subsolar</span> <span class="key"><span class="sw d"></span>isothermal</span>`;
+    $("key1").innerHTML = `<span class="key"><span class="sw" style="border-top-color:${iceC}"></span>${two ? "chosen ices" : "chosen ice"}</span> <span class="key"><span class="sw" style="border-top-color:${ghost}"></span>other ices, subsolar</span> <span class="key"><span class="sw d"></span>isothermal</span>`;
   }
   // perihelion, today, date line
   const vline = (ms, col, dash, label, top) => {
@@ -363,8 +388,10 @@ function drawEta() {
     if (k > 0) { g.textAlign = "left"; g.fillText(ICE_NAME[x], X(rs[k]) + 6, Y(50) - 10); }
     else { g.textAlign = "right"; g.fillText(ICE_NAME[x], box.r - 6, Y(ys[ys.length - 1]) + 12); }
   }
+  const mx = pieceAt(s.el, P, S.cursor).mix, two = mx.length > 1;
+  if (two) { path(g, rs, rs.map((r) => 100 * etaMix(r, mx, P.cz, P.h)), X, Y, { c: css("--ink"), w: 2.4 }); g.fillStyle = css("--ink"); g.font = FONTL; g.textAlign = "left"; g.textBaseline = "middle"; g.fillText("Σ kη", box.l + 6, Y(100 * etaMix(0.3, mx, P.cz, P.h)) + 12); }
   const rc = ephem(s.el, S.cursor).r;
-  if (rc >= 0.3 && rc <= 50) { const x = X(rc); g.strokeStyle = css("--accent"); g.lineWidth = 1; g.beginPath(); g.moveTo(x, box.t); g.lineTo(x, box.b); g.stroke(); g.fillStyle = sel; g.beginPath(); g.arc(x, Y(100 * eta(rc, P.ice, P.cz, P.h)), 4, 0, 2 * Math.PI); g.fill(); }
+  if (rc >= 0.3 && rc <= 50) { const x = X(rc); g.strokeStyle = css("--accent"); g.lineWidth = 1; g.beginPath(); g.moveTo(x, box.t); g.lineTo(x, box.b); g.stroke(); g.fillStyle = two ? css("--ink") : sel; g.beginPath(); g.arc(x, Y(100 * etaMix(rc, mx, P.cz, P.h)), 4, 0, 2 * Math.PI); g.fill(); }
   g.restore();
 }
 function drawN() {
@@ -387,8 +414,10 @@ function drawN() {
     g.fillStyle = col; g.font = FONTL; g.textAlign = "right"; g.textBaseline = "middle";
     const yy = Number.isFinite(ys[k]) ? Y(Math.min(ys[k], 17)) : Y(17); g.fillText(ICE_NAME[x], X(rs[k]) - 6, x === "CO" ? Y(3.5) - 12 : yy);
   }
+  const mx = pieceAt(s.el, P, S.cursor).mix, two = mx.length > 1;
+  if (two) path(g, rs, rs.map((r) => 2 + kSlopeMix(r, mx, P.cz, P.h)), X, Y, { c: ink, w: 2.4 });
   const rc = ephem(s.el, S.cursor).r;
-  if (rc >= 1 && rc <= 50) { const x = X(rc), nv = 2 + kSlope(rc, P.ice, P.cz, P.h); g.strokeStyle = css("--accent"); g.lineWidth = 1; g.beginPath(); g.moveTo(x, box.t); g.lineTo(x, box.b); g.stroke(); if (nv <= 20) { g.fillStyle = css(ICE_VAR[P.ice]); g.beginPath(); g.arc(x, Y(nv), 4, 0, 2 * Math.PI); g.fill(); } }
+  if (rc >= 1 && rc <= 50) { const x = X(rc), nv = 2 + kSlopeMix(rc, mx, P.cz, P.h); g.strokeStyle = css("--accent"); g.lineWidth = 1; g.beginPath(); g.moveTo(x, box.t); g.lineTo(x, box.b); g.stroke(); if (nv <= 20) { g.fillStyle = two ? ink : css(ICE_VAR[P.ice]); g.beginPath(); g.arc(x, Y(nv), 4, 0, 2 * Math.PI); g.fill(); } }
   g.restore();
 }
 
@@ -396,47 +425,65 @@ function drawN() {
 function readouts() {
   const s = S.series, P = s.P, el = s.el, cell = (b, v) => `<div><b>${b}</b><span>${v}</span></div>`;
   if (!el.ok) { $("read").innerHTML = cell("Date", "—"); return; }
-  const g = ephem(el, S.cursor), bal = balance(g.r, P.ice, P.cz, P.h), et = bal.eta, k = kSlope(g.r, P.ice, P.cz, P.h);
+  const g = ephem(el, S.cursor), pc = pieceAt(el, P, S.cursor), two = pc.mix.length > 1, bal = balance(g.r, P.ice, P.cz, P.h);
+  const et = etaMix(g.r, pc.mix, P.cz, P.h), k = kSlopeMix(g.r, pc.mix, P.cz, P.h);
   let mtxt = "—", share = "—";
-  if (el.full) { const mg = magnitude(g.r, g.D, g.alpha, et, P, s.mu); mtxt = mg.m.toFixed(2); share = (100 * mg.nucShare).toFixed(mg.nucShare < 0.01 ? 2 : 1) + " %"; }
+  if (el.full) { const mg = magnitude(g.r, g.D, g.alpha, et, P, pc.mu); mtxt = mg.m.toFixed(2); share = (100 * mg.nucShare).toFixed(mg.nucShare < 0.01 ? 2 : 1) + " %"; }
+  const T2 = two ? balance(g.r, P.ice2, P.cz, P.h).T : NaN;
   $("read").innerHTML = cell("Date", fmtD(S.cursor)) + cell('<span class="m">r</span> (au)', g.r.toFixed(2)) + cell('<span class="m">Δ</span> (au)', el.full ? g.D.toFixed(2) : "—") +
     cell('Phase <span class="m">α</span>', el.full ? g.alpha.toFixed(1) + "°" : "—") + cell('Magnitude <span class="m">m</span>', mi(mtxt)) + cell("Nucleus share", share) +
-    cell(Number.isFinite(P.h) ? "Surface / ice T" : "Surface T", Number.isFinite(P.h) ? `${bal.T.toFixed(0)} / ${bal.Ti.toFixed(0)} K` : bal.T.toFixed(0) + " K") + cell('<span class="m">η<sub>' + ICE_NAME[P.ice] + "</sub></span>", sci(et, 3)) +
-    cell('<span class="m">k</span> (<span class="m">n</span>)', Number.isFinite(k) ? `${k.toFixed(2)} (${(k + 2).toFixed(1)})` : "—") + cell('<span class="m">Afρ</span> (cm)', sci(afrho(s.K, g.r, et), 3));
+    (two ? cell(`T ${ICE_NAME[P.ice]} / ${ICE_NAME[P.ice2]}`, `${bal.T.toFixed(0)} / ${T2.toFixed(0)} K`) : cell(Number.isFinite(P.h) ? "Surface / ice T" : "Surface T", Number.isFinite(P.h) ? `${bal.T.toFixed(0)} / ${bal.Ti.toFixed(0)} K` : bal.T.toFixed(0) + " K")) +
+    cell(two ? '<span class="m">Σ kη</span>' : '<span class="m">η<sub>' + ICE_NAME[P.ice] + "</sub></span>", sci(et, 3)) +
+    cell('<span class="m">n<sub>Q</sub></span> (<span class="m">n</span>)', Number.isFinite(k) ? `${(k + 0.5).toFixed(2)} (${(k + 2).toFixed(1)})` : "—") + cell('<span class="m">Afρ</span> (cm)', sci(afrho(pc.K, g.r, et), 3));
 }
 function table() {
   const s = S.series, P = s.P, el = s.el, tb = $("tab").tBodies[0];
   if (!el.ok) { tb.innerHTML = ""; return; }
-  const g = ephem(el, S.cursor), ref = refMs(s), r0 = ephem(el, ref).r;
-  let best = null; if (S.cmp) for (const sc of SCEN) { const c = S.cmp[sc.x + sc.c]; if (c && (!best || c.score < best.score)) best = c; }
-  tb.innerHTML = SCEN.map((sc) => {
-    const k = kSlope(g.r, sc.x, sc.c, P.h), gr = eta(g.r, sc.x, sc.c, P.h) / eta(r0, sc.x, sc.c, P.h) * (g.r / r0) ** -1.5;
-    const fitc = S.cmp && S.cmp[sc.x + sc.c];
+  const g = ephem(el, S.cursor), ref = refMs(s), r0 = ephem(el, ref).r, rows = [...SCEN, ...PAIRS];
+  let best = null, bs = Infinity; if (S.cmp) for (const sc of rows) { const c = S.cmp[keyOf(sc)]; if (c && (!best || rankOf(c, sc) < bs)) { best = c; bs = rankOf(c, sc); } }
+  tb.innerHTML = rows.map((sc) => {
+    const fitc = S.cmp && S.cmp[keyOf(sc)], kk = sc.y ? (fitc ? fitc.k : P.ice === sc.x && P.ice2 === sc.y ? P.k : 0.5) : 1;
+    const mx = mixFrom(sc.x, sc.y, kk);
+    const k = kSlopeMix(g.r, mx, sc.c, P.h), gr = etaMix(g.r, mx, sc.c, P.h) / etaMix(r0, mx, sc.c, P.h) * (g.r / r0) ** -1.5;
     let m = "—";
-    if (el.full) { const PP = { ...P, HN: fitc ? fitc.HN : P.HN }, K = fitc ? 10 ** fitc.lk : s.K; m = magnitude(g.r, g.D, g.alpha, eta(g.r, sc.x, sc.c, P.h), PP, muFrom(K, PP)).m.toFixed(2); }
-    const on = sc.x === P.ice && Math.abs(sc.c - P.cz) < 1e-6, isBest = best && fitc === best;
+    if (el.full) { const PP = { ...P, HN: fitc ? fitc.HN : P.HN }, K = fitc ? 10 ** fitc.lk : s.K; m = magnitude(g.r, g.D, g.alpha, etaMix(g.r, mx, sc.c, P.h), PP, muFrom(K, PP)).m.toFixed(2); }
+    const on = sc.x === P.ice && (sc.y || "none") === (P.ice2 === P.ice ? "none" : P.ice2) && Math.abs(sc.c - P.cz) < 1e-6, isBest = best && fitc === best;
     const chi = fitc ? (fitc.nu > 0 ? fitc.chi2 / fitc.nu : fitc.chi2).toFixed(fitc.chi2 < 100 ? 2 : 0) + (fitc.nu > 0 ? "" : " (χ²)") : "—";
-    return `<tr data-x="${sc.x}" data-c="${sc.c}" class="${on ? "on" : ""} ${isBest ? "best" : ""}" tabindex="0"><td><span class="chip" style="background:var(${ICE_VAR[sc.x]})"></span>${sc.lab}</td><td>${Number.isFinite(k) ? k.toFixed(2) : "—"}</td><td>${Number.isFinite(k) ? (k + 2).toFixed(1) : "—"}</td><td>× ${sci(gr, 3)}</td><td>${mi(m)}</td><td>${mi(chi)}</td></tr>`;
+    const chip = (x) => `<span class="chip" style="background:var(${ICE_VAR[x]})"></span>`;
+    const lab = sc.y ? `${chip(sc.x)}${chip(sc.y)}${sc.lab}${fitc ? `, k = ${fitc.k.toFixed(2)}` : ""}` : `${chip(sc.x)}${sc.lab}`;
+    return `<tr data-x="${sc.x}" data-y="${sc.y || "none"}" data-c="${sc.c}" data-key="${keyOf(sc)}" class="${on ? "on" : ""} ${isBest ? "best" : ""}" tabindex="0"><td>${lab}</td><td>${Number.isFinite(k) ? (k + 0.5).toFixed(2) : "—"}</td><td>${Number.isFinite(k) ? (k + 2).toFixed(1) : "—"}</td><td>× ${sci(gr, 3)}</td><td>${mi(m)}</td><td>${mi(chi)}</td></tr>`;
   }).join("");
 }
 
 // ---------- fitting
-function fitOne(obs, el, P, x, c, fitH) {
-  const pts = obs.map((o) => { const g = ephem(el, o.ms); return { ...o, r: g.r, D: g.D, al: g.alpha, et: eta(g.r, x, c, P.h) }; });
-  const chi = (lk, HN) => { const PP = { ...P, HN }, mu = muFrom(10 ** lk, PP); let s2 = 0; for (const p of pts) { const d = (p.m - magnitude(p.r, p.D, p.al, p.et, PP, mu).m) / p.s; s2 += d * d; } return s2; };
-  const best1 = (HN) => {
-    let bl = 0, bv = Infinity; for (let lk = -1; lk <= 10; lk += 0.1) { const v = chi(lk, HN); if (v < bv) { bv = v; bl = lk; } }
-    let a = bl - 0.1, b = bl + 0.1; const gr = (Math.sqrt(5) - 1) / 2;
-    for (let k = 0; k < 40; k++) { const c1 = b - gr * (b - a), c2 = a + gr * (b - a); if (chi(c1, HN) < chi(c2, HN)) b = c2; else a = c1; }
-    const lk = (a + b) / 2; return { lk, v: chi(lk, HN) };
+function fitOne(obs, el, P, x, c, fitH, y = "none", Hfix = null) {
+  const two = y && y !== "none" && y !== x;
+  const pts = obs.map((o) => { const g = ephem(el, o.ms); return { ...o, r: g.r, D: g.D, al: g.alpha, eA: eta(g.r, x, c, P.h), eB: two ? eta(g.r, y, c, P.h) : 0 }; });
+  const chi = (lk, HN, k) => { const PP = { ...P, HN }, mu = muFrom(10 ** lk, PP); let s2 = 0; for (const p of pts) { const et = two ? k * p.eA + (1 - k) * p.eB : p.eA, d = (p.m - magnitude(p.r, p.D, p.al, et, PP, mu).m) / p.s; s2 += d * d; } return s2; };
+  const rmsOf = (lk, HN, k) => { const PP = { ...P, HN }, mu = muFrom(10 ** lk, PP); let s2 = 0; for (const p of pts) { const et = two ? k * p.eA + (1 - k) * p.eB : p.eA, d = p.m - magnitude(p.r, p.D, p.al, et, PP, mu).m; s2 += d * d; } return Math.sqrt(s2 / pts.length); };
+  const gr = (Math.sqrt(5) - 1) / 2;
+  const golden = (f, a, b, n) => { for (let q = 0; q < n; q++) { const c1 = b - gr * (b - a), c2 = a + gr * (b - a); if (f(c1) < f(c2)) b = c2; else a = c1; } return (a + b) / 2; };
+  const best1 = (HN, k) => {
+    let bl = 0, bv = Infinity; for (let lk = -1; lk <= 10; lk += 0.1) { const v = chi(lk, HN, k); if (v < bv) { bv = v; bl = lk; } }
+    const lk = golden((l) => chi(l, HN, k), bl - 0.1, bl + 0.1, 40); return { lk, v: chi(lk, HN, k) };
   };
-  if (!fitH) { const r = best1(P.HN); return { lk: r.lk, HN: P.HN, chi2: r.v, nu: pts.length - 1, score: r.v / Math.max(1, pts.length - 1) }; }
-  let bH = P.HN, bv = Infinity, bl = 0; const H0 = Math.max(2, P.HN - 3), H1 = Math.min(22, P.HN + 3);
-  for (let HN = H0; HN <= H1 + 1e-9; HN += 0.1) { const r = best1(HN); if (r.v < bv) { bv = r.v; bH = HN; bl = r.lk; } }
-  let a = bH - 0.1, b = bH + 0.1; const gr = (Math.sqrt(5) - 1) / 2;
-  for (let k = 0; k < 30; k++) { const c1 = b - gr * (b - a), c2 = a + gr * (b - a); if (best1(c1).v < best1(c2).v) b = c2; else a = c1; }
-  const HN = (a + b) / 2, r = best1(HN);
-  return { lk: r.lk, HN, chi2: r.v, nu: pts.length - 2, score: r.v / Math.max(1, pts.length - 2), edge: HN - H0 < 0.15 || H1 - HN < 0.15 };
+  const bestK = (HN) => {                          // share k of the first ice: grid, then golden section
+    if (!two) return { k: 1, ...best1(HN, 1) };
+    let bk = 0, bv = Infinity; for (let k = 0; k <= 1.0001; k += 0.02) { const v = best1(HN, k).v; if (v < bv) { bv = v; bk = k; } }
+    const k = Math.min(1, Math.max(0, golden((kk) => best1(HN, Math.min(1, Math.max(0, kk))).v, bk - 0.02, bk + 0.02, 20)));
+    return { k, ...best1(HN, k) };
+  };
+  const np = 1 + (two ? 1 : 0);
+  if (!fitH || Hfix !== null) { const HN = Hfix !== null ? Hfix : P.HN, r = bestK(HN); return { lk: r.lk, k: r.k, HN, chi2: r.v, rms: rmsOf(r.lk, HN, r.k), nu: pts.length - np, score: r.v / Math.max(1, pts.length - np) }; }
+  const H0 = Math.max(2, P.HN - 3), H1 = Math.min(22, P.HN + 3);
+  let k = two ? bestK(P.HN).k : 1, HN = P.HN;
+  for (let it = 0; it < (two ? 3 : 1); it++) {     // with two ices, alternate between H_N and k
+    let bH = HN, bv = Infinity; for (let h = H0; h <= H1 + 1e-9; h += 0.1) { const r = best1(h, k); if (r.v < bv) { bv = r.v; bH = h; } }
+    HN = golden((h) => best1(h, k).v, bH - 0.1, bH + 0.1, 30);
+    if (two) k = bestK(HN).k;
+  }
+  const r = best1(HN, k);
+  return { lk: r.lk, k, HN, chi2: r.v, rms: rmsOf(r.lk, HN, k), nu: pts.length - np - 1, score: r.v / Math.max(1, pts.length - np - 1), edge: HN - H0 < 0.15 || H1 - HN < 0.15 };
 }
 function obsForFit() {
   const el = readOrbit(); const { obs, bad } = parseObs();
@@ -446,25 +493,37 @@ function obsForFit() {
   if (!use.length) return { err: "No points before the “fit only before” date." };
   return { el, obs: use, bad, cut: Number.isFinite(cut) ? fmtD(cut) : null };
 }
+function fitText(r, n, two) {
+  return `K = ${sci(10 ** r.lk, 3)} cm` + (two ? `, k = ${r.k.toFixed(2)}` : "") + ", " +
+    (r.nu > 0 ? `χ²<sub>ν</sub> = ${(r.chi2 / r.nu).toFixed(2)}, rms ${r.rms.toFixed(2)} mag for ${n} points` : `χ² = ${r.chi2.toFixed(2)}: as many parameters as points`);
+}
 function doFit() {
   const f = obsForFit(); if (f.err) return score(f.err, "mid");
-  const P = params(), fitH = $("fith").checked;
+  const P = params(), fitH = $("fith").checked, two = mixOf(P).length > 1;
   if (fitH && f.obs.length < 2) return score("Fitting H_N as well needs at least two points.", "mid");
-  const r = fitOne(f.obs, f.el, P, P.ice, P.cz, fitH);
-  $("lk").value = r.lk.toFixed(4); if (fitH) $("hn").value = r.HN.toFixed(2);
-  const PP = params();
-  score(`${ICE_NAME[P.ice]}, ⟨cos ζ⟩ = ${P.cz.toFixed(2)}: K = ${sci(10 ** r.lk, 3)} cm, μ = ${sci(muFrom(10 ** r.lk, PP), 3)}${fitH ? `, H<sub>N</sub> = ${r.HN.toFixed(2)}` : ""}. ` + (r.edge ? `H<sub>N</sub> ran to the edge of its range (±3 mag): these data do not constrain it, so untick “also H<sub>N</sub>”. ` : "") +
-    (r.nu > 0 ? `χ²<sub>ν</sub> = ${(r.chi2 / r.nu).toFixed(2)} for ${f.obs.length} points${f.cut ? ` before ${f.cut}` : ""}.` : `χ² = ${r.chi2.toFixed(2)}: as many parameters as points.`) + (f.bad.length ? ` Skipped line ${f.bad.join(", ")}.` : ""),
-    r.edge || (r.nu > 0 && r.chi2 / r.nu > 3) ? "mid" : "good");
+  const pre = P.split ? f.obs.filter((o) => o.ms < f.el.Tms) : f.obs, post = P.split ? f.obs.filter((o) => o.ms >= f.el.Tms) : [];
+  if (!pre.length) return score("No points before perihelion to fit; untick “fit before and after perihelion separately”.", "mid");
+  const r = fitOne(pre, f.el, P, P.ice, P.cz, fitH, P.ice2);
+  $("lk").value = r.lk.toFixed(4); if (two) $("kmix").value = r.k.toFixed(3); if (fitH) $("hn").value = r.HN.toFixed(2);
+  let rp = null; S.post = null;
+  if (P.split && post.length) { rp = fitOne(post, f.el, P, P.ice, P.cz, false, P.ice2, r.HN); S.post = { lk: rp.lk, k: rp.k }; }
+  const PP = params(), head = `${mixName(P)}, ⟨cos ζ⟩ = ${P.cz.toFixed(2)}${fitH ? `, H<sub>N</sub> = ${r.HN.toFixed(2)}` : ""}`;
+  let txt;
+  if (P.split) txt = `${head}. Before perihelion: ${fitText(r, pre.length, two)}. ` + (rp ? `After: ${fitText(rp, post.length, two)}; ` + (two ? `K changed by × ${(10 ** (rp.lk - r.lk)).toFixed(2)} and k from ${r.k.toFixed(2)} to ${rp.k.toFixed(2)}.` : `the active area changed by × ${(10 ** (rp.lk - r.lk)).toFixed(2)}.`) : "No points after perihelion: the curve after it uses the same constants.");
+  else txt = `${head}: ${fitText(r, f.obs.length, two)}, μ = ${sci(muFrom(10 ** r.lk, PP), 3)}.`;
+  txt += (f.cut ? ` Points before ${f.cut} only.` : "") + (r.edge ? ` H<sub>N</sub> ran to the edge of its range (±3 mag): these data do not constrain it, so untick “also H<sub>N</sub>”.` : "") + (f.bad.length ? ` Skipped line ${f.bad.join(", ")}.` : "");
+  const bad = r.edge || (r.nu > 0 && r.chi2 / r.nu > 3) || (rp && rp.nu > 0 && rp.chi2 / rp.nu > 3);
+  score(txt, bad ? "mid" : "good");
   update();
 }
 function doCompare() {
   const f = obsForFit(); if (f.err) return score(f.err, "mid");
-  const P = params(), fitH = $("fith").checked && f.obs.length >= 2; S.cmp = {};
-  for (const sc of SCEN) S.cmp[sc.x + sc.c] = fitOne(f.obs, f.el, P, sc.x, sc.c, fitH);
-  let best = SCEN[0]; for (const sc of SCEN) if (S.cmp[sc.x + sc.c].score < S.cmp[best.x + best.c].score) best = sc;
-  const b = S.cmp[best.x + best.c];
-  score(`Best: ${best.lab}, ` + (b.nu > 0 ? `χ²<sub>ν</sub> = ${(b.chi2 / b.nu).toFixed(2)}` : `χ² = ${b.chi2.toFixed(2)}`) + `. Click a row to use it.`, "good");
+  const P = params(), fitH = $("fith").checked && f.obs.length >= 2, rows = [...SCEN, ...PAIRS]; S.cmp = {};
+  for (const sc of rows) S.cmp[keyOf(sc)] = fitOne(f.obs, f.el, P, sc.x, sc.c, fitH, sc.y || "none");
+  let best = rows[0]; for (const sc of rows) if (rankOf(S.cmp[keyOf(sc)], sc) < rankOf(S.cmp[keyOf(best)], best)) best = sc;
+  const b = S.cmp[keyOf(best)];
+  score(`Best: ${best.lab}${best.y ? ` with k = ${b.k.toFixed(2)}` : ""}, ` + (b.nu > 0 ? `χ²<sub>ν</sub> = ${(b.chi2 / b.nu).toFixed(2)}` : `χ² = ${b.chi2.toFixed(2)}`) +
+    `. A second ice adds one constant, k: it should lower χ²<sub>ν</sub> clearly to count.` + (P.split ? " (Compare fits all points together, not before and after perihelion.)" : "") + ` Click a row to use it.`, "good");
   update();
 }
 function score(html, cls) { const e = $("score"); e.innerHTML = html; e.className = "score " + (cls || ""); }
@@ -503,7 +562,7 @@ function drawSwan() {
       S.swanPts.push({ x, y: p < -10 ? box.b - 6 : y, name, q, p, e, post, pass, passm, L, H, HM });
     });
   }
-  // medians in bins of q with 68% bootstrap intervals (as in the paper's Fig. 2)
+  // medians in bins of q with 68% bootstrap intervals (as in the backtest of the SWAN exponents)
   g.strokeStyle = css("--ink"); g.fillStyle = css("--panel"); g.lineWidth = 1.8;
   for (const [qm, m, p16, p84] of SWAN_MED) {
     const x = X(qm), y = Y(m);
@@ -532,7 +591,10 @@ function labels() {
   $("betao").textContent = P.beta.toFixed(3) + " mag/°";
   $("hmo").textContent = Number.isFinite(P.h) ? `h = ${P.h < 1 ? P.h.toPrecision(2) : P.h.toPrecision(3).replace(/\.0+$/, "")} W m⁻² K⁻¹` : "none (bare ice)";
   $("lko").innerHTML = sci(10 ** P.lk, 3) + " cm";
-  $("munote").innerHTML = `μ = ${sci(muFrom(10 ** P.lk, P), 3)} for this aperture. D for p = 0.04.`;
+  const two = mixOf(P).length > 1; $("kbox").hidden = !two;
+  if (two) $("kmixo").textContent = `${P.k.toFixed(2)} / ${(1 - P.k).toFixed(2)}`;
+  const mu = muFrom(10 ** P.lk, P);
+  $("munote").innerHTML = `μ = ${sci(mu, 3)} for this aperture, so m<sub>1</sub> = H<sub>N</sub> − 2.5 log μ = ${(P.HN - 2.5 * Math.log10(mu)).toFixed(2).replace("-", "−")} (Eq. 17). D for p = 0.04.`;
   const { obs, bad } = parseObs(); $("nobs").textContent = `${obs.length} point${obs.length === 1 ? "" : "s"}${bad.length ? `, ${bad.length} unreadable` : ""}`;
   document.querySelectorAll(".seg label").forEach(() => {});
   $("vmag").setAttribute("aria-pressed", S.view === "mag"); $("vafr").setAttribute("aria-pressed", S.view === "afr");
@@ -543,9 +605,10 @@ function update() { if (raf) return; raf = requestAnimationFrame(() => { raf = 0
 function applyPreset(key) {
   const p = PRESETS[key];
   $("orbitbox").open = key === "custom" || key === "y1";
-  if (!p) { $("cometnote").innerHTML = "Enter the orbit from the JPL Small-Body Database or the MPC, set H<sub>N</sub>, the band and the aperture of your photometry, paste it below and fit."; S.nbox = null; S.cmp = null; update(); return; }
+  if (!p) { $("cometnote").innerHTML = "Enter the orbit from the JPL Small-Body Database or the MPC, set H<sub>N</sub>, the band and the aperture of your photometry, paste it below and fit."; S.nbox = null; S.cmp = null; S.post = null; update(); return; }
   const o = p.orbit; $("oq").value = o.q; $("oe").value = o.e; $("oi").value = o.i; $("oO").value = o.Om; $("ow").value = o.w; $("oT").value = o.T;
-  $("ice-" + p.ice).checked = true; $("cz").value = p.cz; $("hm").value = 3; $("hn").value = p.HN; $("beta").value = p.beta; $("lk").value = p.lk.toFixed(4);
+  $("ice-" + p.ice).checked = true; $("ice2-" + (p.ice2 || "none")).checked = true; $("kmix").value = p.k ?? 0.5;
+  $("split").checked = !!p.split; S.post = p.post || null; $("cz").value = p.cz; $("hm").value = 3; $("hn").value = p.HN; $("beta").value = p.beta; $("lk").value = p.lk.toFixed(4);
   $("j").value = String(p.j); $("ap").value = p.ap; $("msun").value = p.msun; $("y0").value = p.y0; $("y1").value = p.y1; $("ref").value = p.ref;
   $("obs").value = p.obs; $("cut").value = p.cut || ""; $("cometnote").innerHTML = p.note; S.view = p.view; S.nbox = p.nbox || null; S.cmp = null;
   const now = Date.now(), [t0, t1] = windowMs(); S.cursor = p.cursor ? parseDate(p.cursor) : p.view === "mag" && now >= t0 && now <= t1 ? now : parseDate(o.T);
@@ -554,11 +617,13 @@ function applyPreset(key) {
 function cursorFrom(ev) { const b = S.box1; if (!b) return; const rc = $("c1").getBoundingClientRect(); const x = Math.min(Math.max(ev.clientX - rc.left, b.box.l), b.box.r); S.cursor = b.X.inv(x); update(); }
 function init() {
   $("comet").addEventListener("change", (e) => applyPreset(e.target.value));
-  ["oq", "oe", "oi", "oO", "ow", "oT", "ap", "msun", "y0", "y1", "ref", "j"].forEach((id) => $(id).addEventListener("input", () => { S.cmp = null; update(); }));
+  ["oq", "oe", "oi", "oO", "ow", "oT", "ap", "msun", "y0", "y1", "ref", "j"].forEach((id) => $(id).addEventListener("input", () => { S.cmp = null; S.post = null; update(); }));
   ["cz", "hn", "beta", "lk", "hm"].forEach((id) => $(id).addEventListener("input", update));
-  document.querySelectorAll('input[name="ice"]').forEach((e) => e.addEventListener("change", update));
-  $("obs").addEventListener("input", () => { S.cmp = null; update(); });
-  $("cut").addEventListener("input", () => { S.cmp = null; update(); }); $("emp").addEventListener("change", update);
+  document.querySelectorAll('input[name="ice"], input[name="ice2"]').forEach((e) => e.addEventListener("change", () => { S.post = null; update(); }));
+  $("kmix").addEventListener("input", update);
+  $("split").addEventListener("change", () => { if (!$("split").checked) score(""); update(); });
+  $("obs").addEventListener("input", () => { S.cmp = null; S.post = null; update(); });
+  $("cut").addEventListener("input", () => { S.cmp = null; S.post = null; update(); }); $("emp").addEventListener("change", update);
   $("fit").addEventListener("click", doFit); $("cmp").addEventListener("click", doCompare);
   $("vmag").addEventListener("click", () => { S.view = "mag"; update(); }); $("vafr").addEventListener("click", () => { S.view = "afr"; update(); });
   const c1 = $("c1"); let drag = false;
@@ -580,8 +645,9 @@ function init() {
   applyPreset("un271"); requestAnimationFrame(drawSwan);
 }
 function pick(tr) {
-  if (!tr) return; const x = tr.dataset.x, c = +tr.dataset.c; $("ice-" + x).checked = true; $("cz").value = c;
-  const f = S.cmp && S.cmp[x + c]; if (f) { $("lk").value = f.lk.toFixed(4); $("hn").value = f.HN.toFixed(2); }
+  if (!tr) return; const x = tr.dataset.x, y = tr.dataset.y || "none", c = +tr.dataset.c;
+  $("ice-" + x).checked = true; $("ice2-" + y).checked = true; $("cz").value = c; S.post = null;
+  const f = S.cmp && S.cmp[tr.dataset.key]; if (f) { $("lk").value = f.lk.toFixed(4); $("hn").value = f.HN.toFixed(2); if (y !== "none") $("kmix").value = f.k.toFixed(3); }
   update();
 }
 init();

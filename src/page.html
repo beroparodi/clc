@@ -1,6 +1,6 @@
 <title>Light Up a Comet</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Interactive companion to the paper 'Forecasting comet light curves from sublimation physics': energy share of CO, CO2 and water ice, light curves, fits and forecasts.">
+<meta name="description" content="Interactive companion to the paper 'How a comet brightens: the magnitude law from sublimation physics': energy share of CO, CO2 and water ice, the physical and the empirical magnitude law, fits and forecasts.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -61,6 +61,8 @@ details summary{cursor:pointer;font-family:var(--display);font-size:12px;letter-
 .seg label:first-of-type{border-left:0}
 .seg input:checked+label{background:var(--ice,var(--accent));color:var(--panel)}
 .seg input:focus-visible+label{outline:2px solid var(--accent);outline-offset:-2px}
+.seg.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+#kbox[hidden]{display:none}
 .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
 .two input,.two select,.three input{width:100%;box-sizing:border-box}
 .controls .three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
@@ -113,10 +115,10 @@ footer p{margin:.4rem 0}
 <div class="wrap">
 <header>
   <h1>Light Up a Comet</h1>
-  <p>Pick a comet, the ice that drives it and how the Sun’s heat spreads over the nucleus. The model of <em>Forecasting comet light curves from sublimation physics</em> computes the share η<sub>X</sub> of the absorbed sunlight that goes into sublimation and the magnitude in your aperture. Add your own photometry, fit the coma, compare the ices and read off forecasts.</p>
-  <p class="eq">m = H<sub>N</sub> + 5 log(rΔ) + αβ<sub>N</sub> − 2.5 log[1 + μ η<sub>X</sub>(r) r<sup>−3/2</sup> Δ<sup>j</sup> 10<sup>0.4αβ<sub>N</sub></sup>] &nbsp;(Eq. 14), &nbsp;Afρ = K η<sub>X</sub>(r) r<sup>−3/2</sup></p>
+  <p>Pick a comet, the ice that drives it, or two ices on separate patches, and how the Sun’s heat spreads over the nucleus. The standard model of a sublimating nucleus, as in <em>How a comet brightens: the magnitude law from sublimation physics</em>, gives the share η of the absorbed sunlight that goes into sublimation; the physical law turns it into the magnitude in your aperture. Fit the physical and the empirical law to photometry, before and after perihelion if you like, compare the ices and test forecasts.</p>
+  <p class="eq">m = m<sub>1</sub> + 5 log Δ + 8.75 log r − 2.5 log Φ(r), &nbsp;Φ = Σ k<sub>i</sub>η<sub>i</sub>(r) + ν r<sup>3/2</sup> &nbsp;(Eq. 17), &nbsp;Afρ = K Σ k<sub>i</sub>η<sub>i</sub>(r) r<sup>−3/2</sup></p>
   <nav class="links" aria-label="Paper, code and citation">
-    <span>Paper: B. R. Parodi, Am. J. Phys. (submitted)</span>
+    <span>Paper: B. R. Parodi, <em>How a comet brightens</em> (in preparation)</span>
     <a href="https://github.com/beroparodi/clc" target="_blank" rel="noopener">Code on GitHub</a>
     <a href="https://github.com/beroparodi/clc/blob/main/CITATION.cff" target="_blank" rel="noopener">How to cite</a>
   </nav>
@@ -128,28 +130,28 @@ footer p{margin:.4rem 0}
       <select id="comet">
         <optgroup label="In the paper">
           <option value="un271">C/2014 UN271 (Bernardinelli–Bernstein)</option>
-          <option value="t5">C/2024 T5 (ATLAS)</option>
-          <option value="y1">C/2025 Y1 (ATLAS)</option>
+          <option value="hb">C/1995 O1 (Hale–Bopp), 1997</option>
+          <option value="p12">12P/Pons–Brooks, 2024</option>
+          <option value="l3">C/2019 L3 (ATLAS), 2022: two ices</option>
         </optgroup>
         <optgroup label="More comets">
+          <option value="t5">C/2024 T5 (ATLAS)</option>
+          <option value="y1">C/2025 Y1 (ATLAS)</option>
           <option value="halley">1P/Halley, return of 2061</option>
           <option value="encke">2P/Encke, 2027</option>
-          <option value="p12">12P/Pons–Brooks, 2024</option>
           <option value="sw1">29P/Schwassmann–Wachmann</option>
           <option value="p67">67P/Churyumov–Gerasimenko, 2028</option>
-          <option value="hb">C/1995 O1 (Hale–Bopp), 1997</option>
           <option value="hyak">C/1996 B2 (Hyakutake), 1996</option>
           <option value="neo">C/2020 F3 (NEOWISE)</option>
           <option value="a3">C/2023 A3 (Tsuchinshan–ATLAS)</option>
           <option value="i3">3I/ATLAS (interstellar)</option>
         </optgroup>
-        <optgroup label="Forecast test: most observed 2010–2025">
+        <optgroup label="Forecast test (also C/2019 L3): most observed 2010–2025">
           <option value="q2">C/2014 Q2 (Lovejoy), 2015</option>
           <option value="k2">C/2017 K2 (PANSTARRS), 2022</option>
           <option value="t2">C/2017 T2 (PANSTARRS), 2020</option>
           <option value="p1">C/2009 P1 (Garradd), 2011</option>
           <option value="e3">C/2022 E3 (ZTF), 2023</option>
-          <option value="l3">C/2019 L3 (ATLAS), 2022</option>
           <option value="l4">C/2011 L4 (PANSTARRS), 2013</option>
           <option value="a6">C/2025 A6 (Lemmon), 2025</option>
           <option value="v2j">C/2015 V2 (Johnson), 2017</option>
@@ -188,6 +190,16 @@ footer p{margin:.4rem 0}
         <input type="radio" name="ice" id="ice-CO2" value="CO2"><label for="ice-CO2" style="--ice:var(--co2)">CO₂</label>
         <input type="radio" name="ice" id="ice-H2O" value="H2O"><label for="ice-H2O" style="--ice:var(--h2o)">H₂O</label>
       </div></div>
+    <div><div class="lab"><span id="ice2lab">Second ice, on its own patches</span></div>
+      <div class="seg four" role="radiogroup" aria-labelledby="ice2lab">
+        <input type="radio" name="ice2" id="ice2-none" value="none"><label for="ice2-none">none</label>
+        <input type="radio" name="ice2" id="ice2-CO" value="CO"><label for="ice2-CO" style="--ice:var(--co)">CO</label>
+        <input type="radio" name="ice2" id="ice2-CO2" value="CO2"><label for="ice2-CO2" style="--ice:var(--co2)">CO₂</label>
+        <input type="radio" name="ice2" id="ice2-H2O" value="H2O"><label for="ice2-H2O" style="--ice:var(--h2o)">H₂O</label>
+      </div></div>
+    <div id="kbox"><div class="lab"><label for="kmix">Dust share of the first ice <span class="m">k</span></label><output id="kmixo"></output></div>
+      <input id="kmix" type="range" min="0" max="1" step="0.01">
+      <p class="hint">Each ice sublimates from its own patches with its own energy balance (Sec. V B of the paper); <span class="m">k</span> and 1 − <span class="m">k</span> are the shares of the dust the two ices would supply if both were energy-limited, so Φ = kη<sub>1</sub> + (1 − k)η<sub>2</sub> + νr<sup>3/2</sup> (Eq. 17). Fit finds <span class="m">k</span>.</p></div>
     <div><div class="lab"><label for="cz">Heat spread <span class="m">⟨cos ζ⟩</span></label><output id="czo"></output></div>
       <input id="cz" type="range" min="0.25" max="1" step="0.01">
       <div class="ends"><span>isothermal ¼</span><span>subsolar 1</span></div></div>
@@ -211,7 +223,7 @@ footer p{margin:.4rem 0}
       <div><div class="lab"><label for="y0">From</label></div><input id="y0" type="text" inputmode="numeric"></div>
       <div><div class="lab"><label for="y1">To</label></div><input id="y1" type="text" inputmode="numeric"></div>
     </div>
-    <p class="hint">Sun: V −26.76, r′ −26.93. Use H<sub>N</sub> and m<sub>⊙</sub> in the band of your photometry; From and To set the years shown.</p>
+    <p class="hint">Sun: V −26.76, r′ −26.93. Use H<sub>N</sub> and m<sub>⊙</sub> in the band of your photometry; From and To set the years shown. In an aperture of fixed angle (j = 1) the coma fades as Δ<sup>−1</sup>, not as Δ<sup>−2</sup> as in Eq. 17.</p>
     <hr class="sep">
     <div><div class="lab"><label for="obs">Photometry: date, magnitude, error</label><output id="nobs"></output></div>
       <textarea id="obs" rows="5" spellcheck="false"></textarea>
@@ -223,9 +235,10 @@ footer p{margin:.4rem 0}
     </div>
     <div class="row">
       <label class="check"><input id="emp" type="checkbox" checked> empirical law</label>
+      <label class="check"><input id="split" type="checkbox"> fit before and after perihelion separately</label>
       <label class="check" for="cut">fit only before</label><input id="cut" type="text" placeholder="all data" style="width:9em">
     </div>
-    <p class="hint">The empirical law <span class="m">m = m<sub>0</sub> + 5 log Δ + 2.5 n log r</span> is fitted (<span class="m">m<sub>0</sub></span> and <span class="m">n</span>) to the same points as the coma. With a date, Fit and Compare use only earlier points; later ones (open circles) test both forecasts. In the paper’s test of 25 comets the model beats the empirical law with fitted <span class="m">n</span> where its ice switches on within the fitted arc (8 of 10 comets, against 3 of 15 elsewhere), because the steep rise saturates; it does no better than <span class="m">n</span> = 3.5.</p>
+    <p class="hint">The empirical law <span class="m">m = m<sub>0</sub> + 5 log Δ + 2.5 n log r</span> (Eq. 3) is fitted (<span class="m">m<sub>0</sub></span> and <span class="m">n</span>) to the same points as the coma. “Before and after perihelion” fits both laws separately to the two arcs, as in Sec. VI of the paper. With a date, Fit and Compare use only earlier points; later ones (open circles) test both forecasts. In our test of 25 comets the physical law beats the empirical law with fitted <span class="m">n</span> where its ice switches on within the fitted arc (8 of 10 comets, against 3 of 15 elsewhere), because the steep rise saturates; elsewhere it does no better than <span class="m">n</span> = 3.5.</p>
     <div id="score" class="score" aria-live="polite"></div>
   </section>
 
@@ -239,11 +252,11 @@ footer p{margin:.4rem 0}
     <div class="read" id="read" aria-live="polite"></div>
     <div class="pair">
       <figure>
-        <figcaption><span>Share of power used, <span class="m">η<sub>X</sub></span></span><span class="key">band: from ⟨cos ζ⟩ = ¼ to 1</span></figcaption>
+        <figcaption><span>Share of power used, <span class="m">η</span> (Eq. 13)</span><span class="key">band: from ⟨cos ζ⟩ = ¼ to 1</span></figcaption>
         <canvas id="c2" role="img" aria-label="Energy share eta of CO, CO2 and water ice against distance from the Sun"></canvas>
       </figure>
       <figure>
-        <figcaption><span>Activity index <span class="m">n = 2 + k</span></span><span class="key"><span class="sw d"></span>Holt et al. 2026</span></figcaption>
+        <figcaption><span>Activity index <span class="m">n = 3/2 + n<sub>Q</sub></span> (Eq. 15)</span><span class="key"><span class="sw d"></span>Holt et al. 2026</span></figcaption>
         <canvas id="c3" role="img" aria-label="Local activity index n against distance from the Sun for the three ices, with the empirical fit of Holt et al. 2026"></canvas>
       </figure>
     </div>
@@ -251,9 +264,9 @@ footer p{margin:.4rem 0}
       <figcaption><span>All ices for this comet</span>
         <label class="inl" for="ref">Afρ growth from <input id="ref" type="text" placeholder="YYYY-MM-DD"> to the date line</label></figcaption>
       <div class="tbl"><table id="tab">
-        <thead><tr><th scope="col">Ice and heat spread</th><th scope="col"><span class="m">k</span> at date</th><th scope="col"><span class="m">n</span> at date</th><th scope="col"><span class="m">Afρ</span> growth</th><th scope="col"><span class="m">m</span> at date</th><th scope="col">fit <span class="m">χ²<sub>ν</sub></span></th></tr></thead>
+        <thead><tr><th scope="col">Ice and heat spread</th><th scope="col"><span class="m">n<sub>Q</sub></span> at date</th><th scope="col"><span class="m">n</span> at date</th><th scope="col"><span class="m">Afρ</span> growth</th><th scope="col"><span class="m">m</span> at date</th><th scope="col">fit <span class="m">χ²<sub>ν</sub></span></th></tr></thead>
         <tbody></tbody></table></div>
-      <p class="hint" style="padding:6px 4px 0">Click a row to use it. “Compare ices” fits K (and H<sub>N</sub> if ticked) for every row; the smallest χ²<sub>ν</sub> is in green.</p>
+      <p class="hint" style="padding:6px 4px 0">Click a row to use it. “Compare ices” fits K (and H<sub>N</sub> if ticked) for every row, and the share k for the pairs of ices; the smallest χ²<sub>ν</sub> is in green. n<sub>Q</sub> is the production index (Eq. 14), n the activity index of the coma.</p>
     </figure>
   </div>
 </div>
@@ -285,8 +298,8 @@ footer p{margin:.4rem 0}
 </div>
 
 <footer>
-  <p>Constants of the paper: S<sub>⊙</sub> = 1361 W m⁻², Bond albedo A<sub>B</sub> = 0.01, emissivity ε = 0.9, vapor pressures P<sub>X</sub> = A<sub>X</sub> e<sup>−B<sub>X</sub>/T</sup> and latent heats L<sub>X</sub> = B<sub>X</sub>k<sub>B</sub>/m<sub>X</sub> (Table I). K is the Afρ the comet would have at 1 au if all absorbed power went into sublimation; μ follows from K, H<sub>N</sub>, m<sub>⊙</sub> and the aperture. The dust speed is taken ∝ r<sup>−1/2</sup>. A dust mantle of conductance h = κ/d splits the energy balance into one at the surface, (1−A<sub>B</sub>)S<sub>⊙</sub>⟨cos ζ⟩/r² = εσT<sub>s</sub>⁴ + h(T<sub>s</sub> − T<sub>i</sub>), and one at the ice front, h(T<sub>s</sub> − T<sub>i</sub>) = Z<sub>X</sub>(T<sub>i</sub>)L<sub>X</sub>. Orbits are two-body conics with a low-precision Earth, accurate to a few 0.01 au.</p>
-  <p>Data: C/2014 UN271 photometry from Kelley et al. 2022 (LOOK) and Roth et al. 2025 (LCO), its orbit from the JPL Small-Body Database; C/2024 T5 elements as in the paper, C/2025 Y1 from the JPL Small-Body Database; elements of the other comets from the JPL Small-Body Database (via TheSkyLive and Wikipedia), for Hale–Bopp from NASA’s NSSDC; nucleus sizes of 1P (Giotto), 2P (Fernández et al. 2000), 29P (Schambeau et al. 2015), 67P (Rosetta), Hale–Bopp (NSSDC) and Hyakutake (Arecibo radar), each with the stated albedo; SWAN exponents from Combi et al. 2019, 2021 (six comets, Icarus 365, 114509) and 2025 (K2 and E3, fitted to their tables); activity index fit from Holt et al. 2026; NEOWISE from Combi et al. 2021 (ApJL 907, L38); 3I/ATLAS from Tan et al. 2026 and Hui et al. 2026. Light curves: COBS Comet Observation Database (cobs.si), binned, CC BY-NC-SA 4.0; UN271 magnitudes from COBS moved to r′ in 6″ as described in the tool’s data notes.</p>
+  <p>Constants of the paper: S<sub>⊙</sub> = 1361 W m⁻², Bond albedo A<sub>B</sub> = 0.01, emissivity ε = 0.9, vapor pressures P<sub>X</sub> = A<sub>X</sub> e<sup>−B<sub>X</sub>/T</sup> and latent heats L<sub>X</sub> = B<sub>X</sub>k<sub>B</sub>/m<sub>X</sub> (Table I); energy balance Eq. (10), sublimation flux Eq. (12). K is the Afρ the comet would have at 1 au if all absorbed power went into sublimation; μ follows from K, H<sub>N</sub>, m<sub>⊙</sub> and the aperture, and gives the constants of Eq. (17), m<sub>1</sub> = H<sub>N</sub> − 2.5 log μ and ν = 10<sup>−0.4β<sub>N</sub>α</sup>/μ. The dust speed is taken ∝ r<sup>−1/2</sup>. A dust mantle of conductance h = κ/d splits the energy balance into one at the surface, (1−A<sub>B</sub>)S<sub>⊙</sub>⟨cos ζ⟩/r² = εσT<sub>s</sub>⁴ + h(T<sub>s</sub> − T<sub>i</sub>), and one at the ice front, h(T<sub>s</sub> − T<sub>i</sub>) = Z<sub>X</sub>(T<sub>i</sub>)L<sub>X</sub>. Orbits are two-body conics with a low-precision Earth, accurate to a few 0.01 au.</p>
+  <p>Data: C/2014 UN271 photometry from Kelley et al. 2022 (LOOK) and Roth et al. 2025 (LCO), its orbit from the JPL Small-Body Database; C/2024 T5 elements from an earlier version of this work, C/2025 Y1 from the JPL Small-Body Database; elements of the other comets from the JPL Small-Body Database (via TheSkyLive and Wikipedia), for Hale–Bopp from NASA’s NSSDC; nucleus sizes of 1P (Giotto), 2P (Fernández et al. 2000), 29P (Schambeau et al. 2015), 67P (Rosetta), Hale–Bopp (NSSDC) and Hyakutake (Arecibo radar), each with the stated albedo; SWAN exponents from Combi et al. 2019, 2021 (six comets, Icarus 365, 114509) and 2025 (K2 and E3, fitted to their tables); activity index fit from Holt et al. 2026; NEOWISE from Combi et al. 2021 (ApJL 907, L38); 3I/ATLAS from Tan et al. 2026 and Hui et al. 2026. Light curves: COBS Comet Observation Database (cobs.si), binned, CC BY-NC-SA 4.0; UN271 magnitudes from COBS moved to r′ in 6″ as described in the tool’s data notes (the open circles of Fig. 4c of the paper).</p>
 </footer>
 </div>
 <script>

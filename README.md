@@ -1,26 +1,31 @@
-# Forecasting comet light curves from sublimation physics
+# How a comet brightens: the magnitude law from sublimation physics
 
-Code and the interactive tool accompanying
+The interactive tool and code accompanying
 
-> B. R. Parodi, *Forecasting comet light curves from sublimation physics* (Am. J. Phys., submitted)
+> B. R. Parodi, *How a comet brightens: the magnitude law from sublimation physics* (in preparation)
 
 ## Light Up a Comet (interactive)
 
 Open **https://beroparodi.github.io/clc/** in any browser, or download `index.html` and open it locally (no installation needed).
-Pick a comet, the ice that drives it (CO, CO<sub>2</sub> or water) and how the Sun’s heat spreads over the nucleus, from the subsolar point (⟨cos ζ⟩ = 1) to an isothermal, fast-rotating body (⟨cos ζ⟩ = ¼). The page computes the share η<sub>X</sub>(r) of the absorbed sunlight that sublimates the ice (Eqs. 8–10), the local slope *k* and activity index *n* = 2 + *k* (Eq. 13), and the magnitude in a fixed angular or physical aperture with the one-line formula, Eq. (14).
+Pick a comet, the ice that drives it (CO, CO<sub>2</sub> or water), or two ices on separate patches, and how the Sun’s heat spreads over the nucleus, from the subsolar point (⟨cos ζ⟩ = 1) to an isothermal, fast-rotating body (⟨cos ζ⟩ = ¼). The page solves the energy balance of the standard model (Eqs. 10–12) for the share η(r) of the absorbed sunlight that sublimates the ice (Eq. 13), gives the production index *n*<sub>Q</sub> and the activity index *n* = 3/2 + *n*<sub>Q</sub> (Eqs. 14, 15), and the magnitude in a fixed angular or physical aperture with the physical law, Eq. (17):
 
-- **Light curve**: model, nucleus alone, your photometry, perihelion and today; drag the date line to read the model at any date (*r*, Δ, phase angle, magnitude, nucleus share, surface temperature, η<sub>X</sub>, *k*, Afρ).
+*m* = *m*<sub>1</sub> + 5 log Δ + 8.75 log *r* − 2.5 log Φ(*r*), Φ = Σ *k*<sub>i</sub> η<sub>i</sub>(*r*) + ν *r*<sup>3/2</sup>.
+
+In an aperture of fixed angle the coma fades as Δ<sup>−1</sup>, not as Δ<sup>−2</sup>.
+
+- **Light curve**: model, nucleus alone, your photometry, perihelion and today; drag the date line to read the model at any date (*r*, Δ, phase angle, magnitude, nucleus share, surface temperature of each ice, Σ*k*η, *n*<sub>Q</sub> and *n*, Afρ).
 - **Afρ growth**: the growth of Afρ from a reference date for all ices; works with *q*, *e* and *T* alone (as for C/2025 Y1).
-- **Fit and compare**: fit the coma scale *K* (and optionally *H*<sub>N</sub>) to your photometry, or fit all five ice and heat-spread cases at once and compare χ²<sub>ν</sub>.
-- **Forecast test against the empirical law**: the light curve also shows the empirical law *m* = *m*<sub>0</sub> + 5 log Δ + 2.5 *n* log *r*, with *m*<sub>0</sub> and *n* fitted to the same points. With a “fit only before” date, both are fitted to the earlier points only and the later ones test the two forecasts (rms in the legend). In the paper’s test of 25 COBS light curves (Sec. III C), the model beats the empirical law with fitted *n* where its ice switches on within the fitted arc (8 of 10 comets, against 3 of 15 elsewhere), because the steep rise saturates, but does no better than the law with *n* = 3.5. The fifteen comets added to that test by fixed rules are built in with the split used there.
-- **Physics panels**: η<sub>X</sub>(*r*) for the three ices (Fig. 1 of the paper) and *n*(*r*) with the empirical fit of Holt et al. (2026) and the measured slope of C/2014 UN271.
-- **Backtests**: the energy budget of a nucleus (NEOWISE, 3I/ATLAS or your own numbers) and the SOHO/SWAN water-production exponents against the constant-area band (Fig. 2).
+- **Fit and compare**: fit the coma scale *K* (and optionally *H*<sub>N</sub>) to your photometry; with two ices, also their dust share *k* (Sec. V B of the paper). “Compare ices” fits all five single-ice cases and three pairs of ices at once and lists χ²<sub>ν</sub>.
+- **Before and after perihelion**: fit both laws separately to the two arcs, as in Sec. VI of the paper; the fit reports how the active area (and, for two ices, *k*) changed at perihelion.
+- **Forecasts against the empirical law**: the light curve also shows the empirical law *m* = *m*<sub>0</sub> + 5 log Δ + 2.5 *n* log *r* (Eq. 3), with *m*<sub>0</sub> and *n* fitted to the same points. With a “fit only before” date, both are fitted to the earlier points only and the later ones test the two forecasts (rms in the legend), as in Fig. 4 of the paper. In our test of 25 COBS light curves, the physical law beats the empirical law with fitted *n* where its ice switches on within the fitted arc (8 of 10 comets, against 3 of 15 elsewhere), because the steep rise saturates, but elsewhere does no better than the law with *n* = 3.5. The fifteen comets added to that test by fixed rules are built in with the split used there.
+- **Physics panels**: η(*r*) for the three ices and *n*(*r*) (Fig. 2 of the paper), for two ices also Σ*k*η and its *n*, with the empirical fit of Holt et al. (2026) and the measured index of C/2014 UN271.
+- **Backtests**: the energy budget of a nucleus (NEOWISE, 3I/ATLAS or your own numbers) and the SOHO/SWAN water-production exponents against the constant-area band.
 
-Built-in comets: from the paper, C/2014 UN271 (Bernardinelli–Bernstein) with the photometry used there, C/2024 T5 (ATLAS) and C/2025 Y1 (ATLAS); further, 1P/Halley (return of 2061), 2P/Encke (2027), 12P/Pons–Brooks (2024), 29P/Schwassmann–Wachmann, 67P/Churyumov–Gerasimenko (2028), C/1995 O1 (Hale–Bopp), C/1996 B2 (Hyakutake), C/2020 F3 (NEOWISE), C/2023 A3 (Tsuchinshan–ATLAS) and the interstellar 3I/ATLAS; and the fifteen comets added to the paper’s forecast test, C/2014 Q2 (Lovejoy), C/2017 K2 (PANSTARRS), C/2017 T2 (PANSTARRS), C/2009 P1 (Garradd), C/2022 E3 (ZTF), C/2019 L3 (ATLAS), C/2011 L4 (PANSTARRS), C/2025 A6 (Lemmon), C/2015 V2 (Johnson), C/2020 V2 (ZTF), C/2013 US10 (Catalina), C/2012 K1 (PANSTARRS), C/2021 G2 (ATLAS), C/2022 E2 (ATLAS) and C/2022 N2 (PANSTARRS); and two famous disappointments, C/1973 E1 (Kohoutek) and C/2012 S1 (ISON), run through the same forecast rules (they are not among the paper’s 25 comets); with orbits from the JPL Small-Body Database (Hale–Bopp: NASA NSSDC). For these, the coma scale K (and H<sub>N</sub> where no nucleus size is known) is a placeholder to be fitted to photometry. “Your comet” takes any orbit from the JPL Small-Body Database or the MPC.
+Built-in comets: from the paper, C/2014 UN271 (Bernardinelli–Bernstein) with the photometry used there (Fig. 4c), C/1995 O1 (Hale–Bopp) fitted before and after perihelion (Fig. 3b; forecast of Fig. 4a), 12P/Pons–Brooks with the forecast of Fig. 4b, and C/2019 L3 (ATLAS) with CO and water ice on separate patches (Fig. 3c); further, C/2024 T5 (ATLAS), C/2025 Y1 (ATLAS), 1P/Halley (return of 2061), 2P/Encke (2027), 29P/Schwassmann–Wachmann, 67P/Churyumov–Gerasimenko (2028), C/1996 B2 (Hyakutake), C/2020 F3 (NEOWISE), C/2023 A3 (Tsuchinshan–ATLAS) and the interstellar 3I/ATLAS; and the fifteen comets added to our forecast test, C/2014 Q2 (Lovejoy), C/2017 K2 (PANSTARRS), C/2017 T2 (PANSTARRS), C/2009 P1 (Garradd), C/2022 E3 (ZTF), C/2019 L3 (ATLAS), C/2011 L4 (PANSTARRS), C/2025 A6 (Lemmon), C/2015 V2 (Johnson), C/2020 V2 (ZTF), C/2013 US10 (Catalina), C/2012 K1 (PANSTARRS), C/2021 G2 (ATLAS), C/2022 E2 (ATLAS) and C/2022 N2 (PANSTARRS); and two famous disappointments, C/1973 E1 (Kohoutek) and C/2012 S1 (ISON), run through the same forecast rules (they are not among the 25 comets); with orbits from the JPL Small-Body Database (Hale–Bopp: NASA NSSDC). For these, the coma scale K (and H<sub>N</sub> where no nucleus size is known) is a placeholder to be fitted to photometry. “Your comet” takes any orbit from the JPL Small-Body Database or the MPC.
 
 ## Code (`code/`)
 
-Python 3 (numpy, scipy). Keep the files in one folder and run each script from there. Section, equation and note numbers refer to the submitted paper.
+Python 3 (numpy, scipy). Keep the files in one folder and run each script from there. These scripts were written for an earlier, research version of the paper; their section, equation and note numbers refer to that version.
 
 | file | purpose |
 |---|---|
@@ -37,7 +42,7 @@ Python 3 (numpy, scipy). Keep the files in one folder and run each script from t
 
 ## Page sources (`src/`)
 
-`index.html` is assembled by `python build.py` from `src/page.html` (markup and style), `src/model.js` (energy balance, Eq. 14, orbits), `src/swan.js` (SWAN data) and `src/ui.js` (page logic). `node test/test_model.js` checks the JavaScript model against the numbers of the Python code and the paper.
+`index.html` is assembled by `python build.py` from `src/page.html` (markup and style), `src/model.js` (energy balance, Eqs. 10–13, the physical law, Eq. 17, orbits), `src/swan.js` (SWAN data) and `src/ui.js` (page logic). `node test/test_model.js` checks the JavaScript model against the numbers of the Python code.
 
 ## Data
 

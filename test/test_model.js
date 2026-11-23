@@ -33,3 +33,12 @@ const P = 2 * Math.PI / (0.01720209895 / Math.pow(1.243 / (1 - 0.641), 1.5));
 console.log('67P r(T)', M.ephem(p67, iso('2015-08-13')).r.toFixed(3), 'r(T+P/2)', M.ephem(p67, iso('2015-08-13') + P / 2 * 86400000).r.toFixed(3), 'Q', (1.243 * (1 + 0.641) / (1 - 0.641)).toFixed(3));
 // dust mantle (paper: 89 of 123 pass; thick mantle at 1 au Ts ~ 403 K, Ti ~ 174 K; envelope q=1 [-3.20, -1.01])
 const bm = M.balance(1, 'H2O', 1, 0.03); console.log('mantle Ts Ti', bm.T.toFixed(0), bm.Ti.toFixed(0), 'env q=1', M.envelopeMantle(1).map(v => v.toFixed(2)).join(' '), 'q=0.1', M.envelopeMantle(0.1).map(v => v.toFixed(2)).join(' '));
+// two ices on separate patches (Eqs. 16, 17): k = 1 gives the single ice; near the energy limit n is close to 7/2; water's dust share for C/2019 L3 (paper: 4 % at 7 au, 90 % at 4 au)
+{
+  const one = [{ x: 'CO', w: 1 }], mix = [{ x: 'CO', w: 0.04 }, { x: 'H2O', w: 0.96 }];
+  const d1 = Math.abs(M.etaMix(5, one, 1) - M.eta(5, 'CO', 1)), d2 = Math.abs(M.kSlopeMix(5, [{ x: 'CO', w: 1 }, { x: 'H2O', w: 0 }], 1) - M.kSlope(5, 'CO', 1));
+  const nIn = 2 + M.kSlopeMix(1, mix, 1), nOut = [7, 5.5, 4].map((r) => (2 + M.kSlopeMix(r, mix, 1)).toFixed(2));
+  const w = (r) => (0.96 * M.eta(r, 'H2O', 1) / M.etaMix(r, mix, 1)).toFixed(2);
+  console.log('mix: single-ice limits', d1 < 1e-12 && d2 < 1e-9 ? 'ok' : 'FAIL', '| n at 1 au', nIn.toFixed(3), '| n at 7, 5.5, 4 au', nOut.join(' '), '| water dust share at 7, 4 au', w(7), w(4));
+  if (!(d1 < 1e-12 && d2 < 1e-9 && Math.abs(nIn - 3.5) < 0.15)) process.exitCode = 1;
+}

@@ -1,4 +1,4 @@
-// ---- Model core: energy balance, Eq. (14), Afrho, orbits. Pure functions; also runs in Node for tests.
+// ---- Model core: energy balance (Eqs. 10-13 of the paper), the physical law (Eq. 17), Afrho, orbits. Pure functions; also runs in Node for tests.
 const AU_CM = 1.495978707e13, ARCSEC = Math.PI / 180 / 3600, DEG = Math.PI / 180;
 const S0 = 1361.0, SIG = 5.670374e-8, KB = 1.380649e-23, AMU = 1.66054e-27;
 const A_B = 0.01, EPS = 0.9, KG = 0.01720209895;
@@ -10,7 +10,7 @@ function zflux(T, x) { const [A, B, mu] = ICES[x]; const m = mu * AMU; return A 
 
 // Surface temperature T, ice temperature Ti, mass flux Z [kg m^-2 s^-1] and energy share eta for ice x
 // at r [au], <cos zeta> = c, under a dust mantle of conductance h [W m^-2 K^-1] (h = Infinity: bare ice,
-// Eq. 8; otherwise surface: fin = eps sigma T^4 + h (T - Ti), ice front: h (T - Ti) = Z(Ti) L)
+// Eq. 10; otherwise surface: fin = eps sigma T^4 + h (T - Ti), ice front: h (T - Ti) = Z(Ti) L)
 function balance(r, x, c, h = Infinity) {
   const fin = (1 - A_B) * S0 * c / (r * r), L = latent(x), bare = !Number.isFinite(h);
   let lo = 5, hi = 400;
@@ -29,14 +29,25 @@ function eta(r, x, c, h = Infinity) {
   if (v === undefined) { v = balance(r, x, c, h).eta; if (_eta.size > 300000) _eta.clear(); _eta.set(key, v); }
   return v;
 }
-// local slope k = 3/2 - dln(eta)/dln(r), Eq. (13); activity index n = 2 + k
+// local slope k = 3/2 - dln(eta)/dln(r); activity index n = 2 + k = 3/2 + n_Q (Eqs. 14, 15)
 function kSlope(r, x, c, hm = Infinity) {
   const h = 1e-3, a = eta(r * (1 + h), x, c, hm), b = eta(r * (1 - h), x, c, hm);
   if (!(a > 1e-300 && b > 1e-300)) return NaN;
   return 1.5 - (Math.log(a) - Math.log(b)) / (Math.log(1 + h) - Math.log(1 - h));
 }
 
-// Eq. (14).  s = {HN, beta, j, ap, msun}; ap in arcsec (j = 1) or km (j = 0); K = Afrho scale [cm]
+// Several ices on separate patches (Eq. 16 of the paper): mix = [{x, w}] with shares w summing to 1.
+// etaMix is the bracket sum_i k_i eta_i of Eq. (17); kSlopeMix its local slope, n = 2 + k.
+function etaMix(r, mix, c, h = Infinity) { let v = 0; for (const p of mix) if (p.w > 0) v += p.w * eta(r, p.x, c, h); return v; }
+function kSlopeMix(r, mix, c, hm = Infinity) {
+  if (mix.length === 1) return kSlope(r, mix[0].x, c, hm);
+  const h = 1e-3, a = etaMix(r * (1 + h), mix, c, hm), b = etaMix(r * (1 - h), mix, c, hm);
+  if (!(a > 1e-300 && b > 1e-300)) return NaN;
+  return 1.5 - (Math.log(a) - Math.log(b)) / (Math.log(1 + h) - Math.log(1 - h));
+}
+
+// Eq. (17), written with the nucleus as reference: m1 = HN - 2.5 lg mu, nu = 10^(-0.4 beta alpha) / mu.
+// s = {HN, beta, j, ap, msun}; ap in arcsec (j = 1) or km (j = 0); K = Afrho scale [cm]
 function muFrom(K, s) {
   const f = Math.pow(10, 0.4 * (s.HN - s.msun));
   return s.j === 1 ? K * s.ap * ARCSEC / (4 * AU_CM) * f : K * s.ap * 1e5 / (4 * AU_CM * AU_CM) * f;
@@ -116,4 +127,4 @@ function envelopeMantle(q) {
   return [lo, hi];
 }
 
-if (typeof module !== "undefined") module.exports = { latent, balance, eta, kSlope, muFrom, magnitude, afrho, ephem, anomaly, jdOf, msOf, qMax, envelope, envelopeMantle, ICES, ARCSEC, AU_CM };
+if (typeof module !== "undefined") module.exports = { latent, balance, eta, kSlope, etaMix, kSlopeMix, muFrom, magnitude, afrho, ephem, anomaly, jdOf, msOf, qMax, envelope, envelopeMantle, ICES, ARCSEC, AU_CM };
