@@ -6,7 +6,7 @@ const ICE_VAR = { CO: "--co", CO2: "--co2", H2O: "--h2o" };
 const SCEN = [
   { x: "CO", c: 1, lab: "CO, subsolar" }, { x: "CO2", c: 1, lab: "CO₂, subsolar" }, { x: "CO2", c: 0.25, lab: "CO₂, isothermal" },
   { x: "H2O", c: 1, lab: "H₂O, subsolar" }, { x: "H2O", c: 0.25, lab: "H₂O, isothermal" }];
-// two ices on separate patches (Eq. 4), both at the subsolar point; the share k is fitted
+// two ices on separate patches (Eq. 15), both at the subsolar point; the share k is fitted
 const PAIRS = [
   { x: "CO", y: "H2O", c: 1, lab: "CO + H₂O, subsolar" }, { x: "CO2", y: "H2O", c: 1, lab: "CO₂ + H₂O, subsolar" },
   { x: "CO", y: "CO2", c: 1, lab: "CO + CO₂, subsolar" }];
@@ -23,8 +23,8 @@ const PRESETS = {
     orbit: { q: "10.94525581", e: "0.99869477", i: "95.55335892", Om: "190.0846361196", w: "326.33161880945", T: fmtDT(msOf(2462892.9068)) },
     ice: "CO2", cz: 1, HN: 8.40, beta: 0.04, lk: Math.log10(4.110e6), j: 1, ap: 6, msun: -26.93, y0: 2010, y1: 2036, ref: "2024-02-15", view: "mag", cut: "2024-06-01",
     obs: "# r′ magnitude in a 6″ radius aperture\n2021-12-15 18.99 0.05  # LOOK, Oct 2021–Feb 2022 (Kelley et al. 2022)\n2024-02-15 17.38 0.03  # LCO, Feb 2024 (Roth et al. 2025)",
-    nbox: { r0: 16.70, r1: 19.4, n: 9.6, s: 0.3 },        // the coma index measured between the two points (Sec. V)
-    note: "Nucleus 120–140 km across (H<sub>N</sub> = 8.40 in r′). K is anchored on the 2024 point with CO₂ at the subsolar point (μ = 271), as in Fig. 5c of the paper. The later points are monthly medians of amateur CCD photometry from COBS (2024 Oct – 2026 Nov), not fitted: each magnitude, measured in a 8–73″ aperture, is converted to r′ in 6″ by removing the nucleus, scaling the coma flux by 6″/ρ (a steady coma) and taking V − r′ = 0.22. Converted this way they follow the CO₂ forecast (median offset 0.00 mag), while the empirical law through the two professional points, with a constant n, is about 0.45 mag too bright. The conversion is uncertain by about half a magnitude: the main observer’s apertures suggest a coma flux growing as ρ<sup>0.6</sup>, which would make the points 0.65 mag brighter and favor the constant n. Clear “fit only before” to fit all points."
+    nbox: { r0: 16.70, r1: 19.4, n: 9.6, s: 0.3 },        // the coma index measured between the two points (Sec. VI)
+    note: "Nucleus 120–140 km across (H<sub>N</sub> = 8.40 in r′). K is anchored on the 2024 point with CO₂ at the subsolar point (μ = 271), as in Fig. 4c of the paper. The later points are monthly medians of amateur CCD photometry from COBS (2024 Oct – 2026 Nov), not fitted: each magnitude, measured in a 8–73″ aperture, is converted to r′ in 6″ by removing the nucleus, scaling the coma flux by 6″/ρ (a steady coma) and taking V − r′ = 0.22. Converted this way they follow the CO₂ forecast (median offset 0.00 mag), while the empirical law through the two professional points, with a constant n, is about 0.45 mag too bright. The conversion is uncertain by about half a magnitude: the main observer’s apertures suggest a coma flux growing as ρ<sup>0.6</sup>, which would make the points 0.65 mag brighter and favor the constant n. Clear “fit only before” to fit all points."
   },
   t5: {
     orbit: { q: "3.84251371", e: "1.00240368", i: "52.38681511", Om: "100.67985066075", w: "352.41723883275", T: "2027-05-06 02:38" },
@@ -54,7 +54,7 @@ Object.assign(PRESETS, {
       note: "Rosetta’s comet; next perihelion 2028 Apr 9 at 1.21 au. H<sub>N</sub> from the mean radius 1.65 km and p<sub>V</sub> = 0.065; K is a placeholder." }),
   p12: MORE({ q: "0.78086475", e: "0.95456023", i: "74.19083929", Om: "255.85505059528", w: "198.98800614657", T: fmtDT(msOf(2460421.6316)) },
     { lk: 5.124, ice: "H2O", HN: 13, y0: 2022, y1: 2026, ref: "2023-07-09", cut: "2024-01-01",
-      note: "Halley-type comet with a 71-year period and repeated outbursts before its perihelion of 2024 Apr 21 at 0.78 au. As in Fig. 5b of the paper, both laws are fitted to the rise up to the end of 2023 (2.1 au): the empirical law gives <i>n</i> = 8.8 and misses the rest by 5.0 mag, water ice by 0.5 mag. The outbursts of 2023 stand above the water curve. Its nucleus is not measured: H<sub>N</sub> is a placeholder; K is fitted to the COBS magnitudes before the cut." }),
+      note: "Halley-type comet with a 71-year period and repeated outbursts before its perihelion of 2024 Apr 21 at 0.78 au. As in Fig. 4b of the paper, both laws are fitted to the rise up to the end of 2023 (2.1 au): the empirical law gives <i>n</i> = 8.8 and misses the rest by 5.0 mag, water ice by 0.5 mag. The outbursts of 2023 stand above the water curve. Its nucleus is not measured: H<sub>N</sub> is a placeholder; K is fitted to the COBS magnitudes before the cut." }),
   a3: MORE({ q: "0.39145906", e: "1.00012475", i: "139.11502467", Om: "21.558609111275", w: "308.4872848828", T: fmtDT(msOf(2460581.2353)) },
     { lk: 4.571, ice: "CO2", HN: 15, y0: 2023, y1: 2026, ref: "2024-01-22",
       note: "The bright comet of October 2024; perihelion 2024 Sep 27 at 0.39 au on a nearly parabolic orbit. H<sub>N</sub> is a placeholder; K is fitted to the COBS magnitudes. CO₂ fits the whole arc far better than water (χ²<sub>ν</sub> 19 against 120): it was active at 7 au." }),
@@ -63,7 +63,7 @@ Object.assign(PRESETS, {
       note: "The bright comet of July 2020; perihelion 2020 Jul 3 at 0.29 au. Its peak water production needs a nucleus of at least 3.5 km radius: see the energy budget below. H<sub>N</sub> is a placeholder; K is fitted to the COBS magnitudes. The faint points in April 2020 are small-aperture CCD magnitudes." }),
   hb: MORE({ q: "0.9141", e: "0.9951", i: "89.43", Om: "282.47", w: "130.59", T: "1997-04-01 03:19" },
     { lk: 7.324, split: true, post: { lk: 7.2718, k: 1 }, ice: "CO", HN: 11.39, y0: 1995, y1: 2000, ref: "1995-07-23",
-      note: "The Great Comet of 1997, discovered on 1995 Jul 23 at 7.1 au, far beyond the water zone; perihelion 1997 Apr 1 at 0.91 au. H<sub>N</sub> for a nucleus 35 km across (30–40 km) and p = 0.04. As in Fig. 4b of the paper, CO and the empirical law are fitted separately before and after perihelion: rms 0.31 and 0.24 mag, <i>n</i> = 3.1 and 3.5, and the active area after perihelion is 0.89 times that before. Water alone does not fit (Compare ices). For the forecast of Fig. 5a, untick “before and after perihelion”, enter 1996-03-15 under “fit only before” and Fit: the empirical law (<i>n</i> = 4.6) misses the rest by 1.2 mag, CO by 0.4 mag." }),
+      note: "The Great Comet of 1997, discovered on 1995 Jul 23 at 7.1 au, far beyond the water zone; perihelion 1997 Apr 1 at 0.91 au. H<sub>N</sub> for a nucleus 35 km across (30–40 km) and p = 0.04. As in Fig. S1b of the paper's supplementary material, CO and the empirical law are fitted separately before and after perihelion: rms 0.31 and 0.24 mag, <i>n</i> = 3.1 and 3.5, and the active area after perihelion is 0.89 times that before. Water alone does not fit (Compare ices). For the forecast of Fig. 4a, untick “before and after perihelion”, enter 1996-03-15 under “fit only before” and Fit: the empirical law (<i>n</i> = 4.6) misses the rest by 1.2 mag, CO by 0.4 mag." }),
   hyak: MORE({ q: "0.23022353", e: "0.99989165", i: "124.92204939", Om: "188.04513199216", w: "130.1751209781", T: fmtDT(msOf(2450204.8941)) },
     { lk: 4.804, ice: "H2O", HN: 15.71, y0: 1996, y1: 1997, ref: "1996-01-30", view: "mag", cursor: "1996-03-25",
       note: "The Great Comet of 1996. Discovered on 1996 Jan 30, it passed 0.10 au from the Earth on Mar 25, five weeks before perihelion at 0.23 au: the magnitude view shows the close approach. H<sub>N</sub> from the nucleus seen in the infrared (Lisse et al. 1999: D ≈ 4.8 km, with p = 0.04; radar echoes suggested 1–3 km); K is fitted to the COBS magnitudes. Its SWAN water exponents are the points at q = 0.23 au below." }),
@@ -91,7 +91,7 @@ Object.assign(PRESETS, {
       note: "The green comet of early 2023; perihelion 2023 Jan 12 at 1.11 au. In our forecast test of 24 comets, water at the subsolar point fits the points before the cut; the forecast rms is 0.30 mag, against 0.48 for the empirical law with fitted <i>n</i> (<i>n</i> = 4.6) and 0.60 for <i>n</i> = 3.5: the chosen ice switches on within the fitted half. H<sub>N</sub> is a placeholder." }),
   l3: MORE({ q: "3.554492702308672", e: "1.001405275505796", i: "48.36374698279935", Om: "290.7888867057587", w: "171.6137051016775", T: fmtDT(msOf(2459589.132623246)) },
     { lk: 6.035, ice: "CO", ice2: "H2O", k: 0.04, split: true, post: { lk: 6.0265, k: 0.897 }, cz: 1, HN: 15, y0: 2020, y1: 2024, ref: "2020-01-06",
-      note: "Active from 8 au; perihelion 2022 Jan 9 at 3.55 au. As in Fig. 4c of the paper, CO and water ice on separate patches are fitted before perihelion (rms 0.26 mag, k = 0.04). No single ice fits the steep rise (<i>n</i> = 7.8): with 2022-01-09 under “fit only before”, Compare ices gives χ²<sub>ν</sub> = 2.7 for the pair and 22 or more for any single ice. Far out, CO supplied the dust; as water switched on, its share grew and the index rose. After perihelion the comet faded slowly (<i>n</i> = 3.6) and the fit gives k = 0.90, as if its water patches had stopped working. In our forecast test of 24 comets (cut 2021-10-04), CO₂ on an isothermal nucleus fits the points before the cut; the forecast rms is 1.77 mag, against 1.53 for the empirical law with fitted <i>n</i> (<i>n</i> = 7.5) and 1.86 for <i>n</i> = 3.5. H<sub>N</sub> is a placeholder." }),
+      note: "Active from 8 au; perihelion 2022 Jan 9 at 3.55 au. As in Fig. S1c of the paper's supplementary material, CO and water ice on separate patches are fitted before perihelion (rms 0.26 mag, k = 0.04). No single ice fits the steep rise (<i>n</i> = 7.8): with 2022-01-09 under “fit only before”, Compare ices gives χ²<sub>ν</sub> = 2.7 for the pair and 22 or more for any single ice. Far out, CO supplied the dust; as water switched on, its share grew and the index rose. After perihelion the comet faded slowly (<i>n</i> = 3.6) and the fit gives k = 0.90, as if its water patches had stopped working. In our forecast test of 24 comets (cut 2021-10-04), CO₂ on an isothermal nucleus fits the points before the cut; the forecast rms is 1.77 mag, against 1.53 for the empirical law with fitted <i>n</i> (<i>n</i> = 7.5) and 1.86 for <i>n</i> = 3.5. H<sub>N</sub> is a placeholder." }),
   l4: MORE({ q: "0.3015442238164768", e: "1.000032767108972", i: "84.20819702923397", Om: "65.6658863915034", w: "333.6516376633611", T: fmtDT(msOf(2456361.669960002)) },
     { lk: 5.056, ice: "CO", cz: 1, HN: 15, y0: 2012, y1: 2014, ref: "2012-05-22", cut: "2013-03-05",
       note: "C/2011 L4 (PANSTARRS), a naked-eye comet in March 2013; perihelion 2013 Mar 10 at 0.30 au. In our forecast test of 24 comets, CO at the subsolar point fits the points before the cut; the forecast rms is 0.96 mag, against 0.92 for the empirical law with fitted <i>n</i> (<i>n</i> = 2.9) and 0.96 for <i>n</i> = 3.5: the chosen ice does not switch on within the fitted half, so the model is the law with <i>n</i> ≈ 3.5. H<sub>N</sub> is a placeholder." }),
@@ -133,7 +133,7 @@ Object.assign(PRESETS, {
 
 // COBS light curves (data/cobs_lightcurves.txt, CC BY-NC-SA 4.0), appended to the presets
 const COBS_HEAD = {
-  un271: "# COBS CCD photometry moved to r′ in 6″ (monthly medians, see the note; open circles in Fig. 5c of the paper), not fitted",
+  un271: "# COBS CCD photometry moved to r′ in 6″ (monthly medians, see the note; open circles in Fig. 4c of the paper), not fitted",
   other: "# total magnitudes from COBS (median per bin; CC BY-NC-SA 4.0)" };
 if (typeof COBS === "object") for (const [k, txt] of Object.entries(COBS)) {
   const p = PRESETS[k]; if (!p) continue;
@@ -594,7 +594,7 @@ function labels() {
   const two = mixOf(P).length > 1; $("kbox").hidden = !two;
   if (two) $("kmixo").textContent = `${P.k.toFixed(2)} / ${(1 - P.k).toFixed(2)}`;
   const mu = muFrom(10 ** P.lk, P);
-  $("munote").innerHTML = `μ = ${sci(mu, 3)} for this aperture, so m<sub>1</sub> = H<sub>N</sub> − 2.5 log μ = ${(P.HN - 2.5 * Math.log10(mu)).toFixed(2).replace("-", "−")} (Eq. 4). D for p = 0.04.`;
+  $("munote").innerHTML = `μ = ${sci(mu, 3)} for this aperture, so m<sub>1</sub> = H<sub>N</sub> − 2.5 log μ = ${(P.HN - 2.5 * Math.log10(mu)).toFixed(2).replace("-", "−")} (Eq. 15). D for p = 0.04.`;
   const { obs, bad } = parseObs(); $("nobs").textContent = `${obs.length} point${obs.length === 1 ? "" : "s"}${bad.length ? `, ${bad.length} unreadable` : ""}`;
   document.querySelectorAll(".seg label").forEach(() => {});
   $("vmag").setAttribute("aria-pressed", S.view === "mag"); $("vafr").setAttribute("aria-pressed", S.view === "afr");
