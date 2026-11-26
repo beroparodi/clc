@@ -6,7 +6,7 @@ const ICE_VAR = { CO: "--co", CO2: "--co2", H2O: "--h2o" };
 const SCEN = [
   { x: "CO", c: 1, lab: "CO, subsolar" }, { x: "CO2", c: 1, lab: "CO₂, subsolar" }, { x: "CO2", c: 0.25, lab: "CO₂, isothermal" },
   { x: "H2O", c: 1, lab: "H₂O, subsolar" }, { x: "H2O", c: 0.25, lab: "H₂O, isothermal" }];
-// two ices on separate patches (Eq. 15), both at the subsolar point; the share k is fitted
+// two ices on separate patches (Eq. 14), both at the subsolar point; the share k is fitted
 const PAIRS = [
   { x: "CO", y: "H2O", c: 1, lab: "CO + H₂O, subsolar" }, { x: "CO2", y: "H2O", c: 1, lab: "CO₂ + H₂O, subsolar" },
   { x: "CO", y: "CO2", c: 1, lab: "CO + CO₂, subsolar" }];
@@ -60,7 +60,7 @@ Object.assign(PRESETS, {
       note: "The bright comet of October 2024; perihelion 2024 Sep 27 at 0.39 au on a nearly parabolic orbit. H<sub>N</sub> is a placeholder; K is fitted to the COBS magnitudes. CO₂ fits the whole arc far better than water (χ²<sub>ν</sub> 19 against 120): it was active at 7 au." }),
   neo: MORE({ q: "0.295", e: "0.99921", i: "128.94", Om: "61.010", w: "37.279", T: "2020-07-03 12:00" },
     { lk: 4.379, ice: "H2O", HN: 15, y0: 2019, y1: 2022, ref: "2019-11-03",
-      note: "The bright comet of July 2020; perihelion 2020 Jul 3 at 0.29 au. Its peak water production needs a nucleus of at least 3.5 km radius: see the energy budget below. H<sub>N</sub> is a placeholder; K is fitted to the COBS magnitudes. The faint points in April 2020 are small-aperture CCD magnitudes." }),
+      note: "The bright comet of July 2020; perihelion 2020 Jul 3 at 0.29 au. Its peak water production needs a nucleus of at least 3.5 km radius: see the power budget below. H<sub>N</sub> is a placeholder; K is fitted to the COBS magnitudes. The faint points in April 2020 are small-aperture CCD magnitudes." }),
   hb: MORE({ q: "0.9141", e: "0.9951", i: "89.43", Om: "282.47", w: "130.59", T: "1997-04-01 03:19" },
     { lk: 7.324, split: true, post: { lk: 7.2718, k: 1 }, ice: "CO", HN: 11.39, y0: 1995, y1: 2000, ref: "1995-07-23",
       note: "The Great Comet of 1997, discovered on 1995 Jul 23 at 7.1 au, far beyond the water zone; perihelion 1997 Apr 1 at 0.91 au. H<sub>N</sub> for a nucleus 35 km across (30–40 km) and p = 0.04. As in Fig. S1b of the paper's supplementary material, CO and the empirical law are fitted separately before and after perihelion: rms 0.31 and 0.24 mag, <i>n</i> = 3.1 and 3.5, and the active area after perihelion is 0.89 times that before. Water alone does not fit (Compare ices). For the forecast of Fig. 4a, untick “before and after perihelion”, enter 1996-03-15 under “fit only before” and Fit: the empirical law (<i>n</i> = 4.6) misses the rest by 1.2 mag, CO by 0.4 mag." }),
@@ -69,7 +69,7 @@ Object.assign(PRESETS, {
       note: "The Great Comet of 1996. Discovered on 1996 Jan 30, it passed 0.10 au from the Earth on Mar 25, five weeks before perihelion at 0.23 au: the magnitude view shows the close approach. H<sub>N</sub> from the nucleus seen in the infrared (Lisse et al. 1999: D ≈ 4.8 km, with p = 0.04; radar echoes suggested 1–3 km); K is fitted to the COBS magnitudes. Its SWAN water exponents are the points at q = 0.23 au below." }),
   i3: MORE({ q: "1.35638454", e: "6.13941774", i: "175.11310480", Om: "322.15684249105", w: "128.01051366675", T: fmtDT(msOf(2460977.9814)) },
     { lk: 3.999, ice: "H2O", HN: 17.04, y0: 2025, y1: 2027, ref: "2025-07-16",
-      note: "The third interstellar object, on a hyperbola with e = 6.14; perihelion 2025 Oct 29 at 1.36 au. H<sub>N</sub> from R<sub>N</sub> = 1.3 km and p = 0.04; K is fitted to the COBS magnitudes. Its water production exceeds what this nucleus can deliver: see the energy budget below." }),
+      note: "The third interstellar object, on a hyperbola with e = 6.14; perihelion 2025 Oct 29 at 1.36 au. H<sub>N</sub> from R<sub>N</sub> = 1.3 km and p = 0.04; K is fitted to the COBS magnitudes. Its water production exceeds what this nucleus can deliver: see the power budget below." }),
 });
 
 // comets of our forecast test of 24 light curves (supplementary material): ice and K from the first half, cut at the split
@@ -128,7 +128,7 @@ Object.assign(PRESETS, {
       note: "The “comet of the century” of 1973 that disappointed. Discovered on 1973 Mar 18 at 4.6 au; extrapolations with a fixed index (<i>n</i> = 4 to 6) promised magnitude −10 or brighter, but it peaked near −3 at perihelion on 1973 Dec 28, 0.14 au from the Sun and too close to it for ground observers. COBS holds almost no magnitudes from before October 1973. With the rules of our forecast test (it is not one of the 24 comets), CO at the subsolar point fits the points before the cut; the forecast rms is 1.55 mag, against 1.46 for the empirical law with fitted <i>n</i> (<i>n</i> = 2.8) and 1.55 for <i>n</i> = 3.5. No law foresees how fast it faded after perihelion: with one μ before and one after, μ<sub>post</sub>/μ<sub>pre</sub> = 0.27. H<sub>N</sub> is a placeholder." }),
   ison: MORE({ q: "0.01246672509220626", e: "1.00000509491957", i: "62.16289620932959", Om: "295.6865414817095", w: "345.5411966905318", T: fmtDT(msOf(2456625.264531166622)) },
     { lk: 4.1954, ice: "CO", cz: 1, HN: 15, y0: 2012, y1: 2014, ref: "2012-12-17", cut: "2013-05-06",
-      note: "The sungrazer of 2013, which prompted Parodi (2013), the forerunner of this model. Discovered on 2012 Sep 21 at 6.3 au; early extrapolations promised a comet brighter than the full Moon. Its brightness stalled in the first half of 2013 and rose again after its conjunction with the Sun; it reached about magnitude −2 on Nov 27 and disintegrated at perihelion on 2013 Nov 28, 0.012 au from the Sun’s centre. The last COBS bin is Nov 18. With the rules of our forecast test (it is not one of the 24 comets), CO at the subsolar point fits the points before the cut; the forecast rms is 1.29 mag, against 3.67 for the empirical law with fitted <i>n</i> (<i>n</i> = 0.1, the stall) and 1.30 for <i>n</i> = 3.5. The fitted index, frozen in the stall, misses the rise by magnitudes; the energy-limited model does not. It forecasts about magnitude −0.5 for Nov 27 and −10 for perihelion: the comet broke up before. H<sub>N</sub> is a placeholder (the nucleus was less than 1 km across)." }),
+      note: "The sungrazer of 2013, which prompted Parodi (2013), the forerunner of this model. Discovered on 2012 Sep 21 at 6.3 au; early extrapolations promised a comet brighter than the full Moon. Its brightness stalled in the first half of 2013 and rose again after its conjunction with the Sun; it reached about magnitude −2 on Nov 27 and disintegrated at perihelion on 2013 Nov 28, 0.012 au from the Sun’s centre. The last COBS bin is Nov 18. With the rules of our forecast test (it is not one of the 24 comets), CO at the subsolar point fits the points before the cut; the forecast rms is 1.29 mag, against 3.67 for the empirical law with fitted <i>n</i> (<i>n</i> = 0.1, the stall) and 1.30 for <i>n</i> = 3.5. The fitted index, frozen in the stall, misses the rise by magnitudes; the physical law does not. It forecasts about magnitude −0.5 for Nov 27 and −10 for perihelion: the comet broke up before. H<sub>N</sub> is a placeholder (the nucleus was less than 1 km across)." }),
 });
 
 // COBS light curves (data/cobs_lightcurves.txt, CC BY-NC-SA 4.0), appended to the presets
@@ -402,7 +402,7 @@ function drawN() {
   clip(g, X, Y);
   const mute = css("--mute"), ink = css("--ink");
   g.strokeStyle = mute; g.setLineDash([2, 3]); g.beginPath(); g.moveTo(box.l, Y(3.5)); g.lineTo(box.r, Y(3.5)); g.stroke(); g.setLineDash([]);
-  g.fillStyle = mute; g.font = FONTS; g.textAlign = "left"; g.textBaseline = "top"; g.fillText("energy-limited 7/2", box.l + 4, Y(3.5) + 3);
+  g.fillStyle = mute; g.font = FONTS; g.textAlign = "left"; g.textBaseline = "top"; g.fillText("fully active 7/2", box.l + 4, Y(3.5) + 3);
   if (S.nbox) { const b = S.nbox, oc = css("--obs"); g.fillStyle = alpha(oc, 0.22); g.strokeStyle = oc; g.fillRect(X(b.r0), Y(b.n + b.s), X(b.r1) - X(b.r0), Y(b.n - b.s) - Y(b.n + b.s)); g.strokeRect(X(b.r0), Y(b.n + b.s), X(b.r1) - X(b.r0), Y(b.n - b.s) - Y(b.n + b.s)); g.fillStyle = oc; g.textAlign = "left"; g.textBaseline = "middle"; g.fillText("UN271", X(b.r1) + 5, Y(b.n)); }
   const holt = (r) => 0.40 * r * (Math.log(r) + 1) - 1.78;
   path(g, curveR(2.5, 10, 60), curveR(2.5, 10, 60).map(holt), X, Y, { c: ink, w: 1.4, dash: [6, 4] });
@@ -434,7 +434,7 @@ function readouts() {
     cell('Phase <span class="m">α</span>', el.full ? g.alpha.toFixed(1) + "°" : "—") + cell('Magnitude <span class="m">m</span>', mi(mtxt)) + cell("Nucleus share", share) +
     (two ? cell(`T ${ICE_NAME[P.ice]} / ${ICE_NAME[P.ice2]}`, `${bal.T.toFixed(0)} / ${T2.toFixed(0)} K`) : cell(Number.isFinite(P.h) ? "Surface / ice T" : "Surface T", Number.isFinite(P.h) ? `${bal.T.toFixed(0)} / ${bal.Ti.toFixed(0)} K` : bal.T.toFixed(0) + " K")) +
     cell(two ? '<span class="m">Σ kη</span>' : '<span class="m">η<sub>' + ICE_NAME[P.ice] + "</sub></span>", sci(et, 3)) +
-    cell('<span class="m">n<sub>Q</sub></span> (<span class="m">n</span>)', Number.isFinite(k) ? `${(k + 0.5).toFixed(2)} (${(k + 2).toFixed(1)})` : "—") + cell('<span class="m">Afρ</span> (cm)', sci(afrho(pc.K, g.r, et), 3));
+    cell('<span class="m">n<sub>Q</sub></span> (<span class="m">n<sub>C</sub></span>)', Number.isFinite(k) ? `${(k + 0.5).toFixed(2)} (${(k + 2).toFixed(1)})` : "—") + cell('<span class="m">Afρ</span> (cm)', sci(afrho(pc.K, g.r, et), 3));
 }
 function table() {
   const s = S.series, P = s.P, el = s.el, tb = $("tab").tBodies[0];
@@ -528,13 +528,13 @@ function doCompare() {
 }
 function score(html, cls) { const e = $("score"); e.innerHTML = html; e.className = "score " + (cls || ""); }
 
-// ---------- energy budget and SWAN backtest
+// ---------- power budget and SWAN backtest
 const BPRE = { neo: { q: "5.27e30", r: "0.337", rn: "3.5" }, "3i": { q: "4.5e28", r: "1.49", rn: "1.3" } };
 function budget() {
   const Q = num($("bq").value), r = num($("br").value), RN = num($("brn").value);
   if (!(Q > 0 && r > 0 && RN > 0)) { $("bout").innerHTML = "Enter Q, r and R<sub>N</sub>."; return; }
   const qm = qMax(RN, r, "H2O", 1), f = Q / qm, rmin = RN * Math.sqrt(f);
-  $("bout").innerHTML = `Q<sub>max</sub> = ${sci(qm, 3)} s⁻¹ &nbsp;·&nbsp; f = ${f.toPrecision(3)} &nbsp;<span class="pill ${f <= 1 ? "ok" : "no"}">${f <= 1 ? "energy suffices" : "needs another source"}</span><br>smallest nucleus for f ≤ 1: R<sub>N</sub> = ${rmin.toPrecision(3)} km`;
+  $("bout").innerHTML = `Q<sub>max</sub> = ${sci(qm, 3)} s⁻¹ &nbsp;·&nbsp; f = ${f.toPrecision(3)} &nbsp;<span class="pill ${f <= 1 ? "ok" : "no"}">${f <= 1 ? "power suffices" : "needs another source"}</span><br>smallest nucleus for f ≤ 1: R<sub>N</sub> = ${rmin.toPrecision(3)} km`;
 }
 function drawSwan() {
   const cv = $("c4"), { g, w, h } = frame(cv, 0.5, 260, 420);
@@ -594,7 +594,7 @@ function labels() {
   const two = mixOf(P).length > 1; $("kbox").hidden = !two;
   if (two) $("kmixo").textContent = `${P.k.toFixed(2)} / ${(1 - P.k).toFixed(2)}`;
   const mu = muFrom(10 ** P.lk, P);
-  $("munote").innerHTML = `μ = ${sci(mu, 3)} for this aperture, so m<sub>1</sub> = H<sub>N</sub> − 2.5 log μ = ${(P.HN - 2.5 * Math.log10(mu)).toFixed(2).replace("-", "−")} (Eq. 15). D for p = 0.04.`;
+  $("munote").innerHTML = `μ = ${sci(mu, 3)} for this aperture, so m<sub>1</sub> = H<sub>N</sub> − 2.5 log μ = ${(P.HN - 2.5 * Math.log10(mu)).toFixed(2).replace("-", "−")} (Eq. 14). D for p = 0.04.`;
   const { obs, bad } = parseObs(); $("nobs").textContent = `${obs.length} point${obs.length === 1 ? "" : "s"}${bad.length ? `, ${bad.length} unreadable` : ""}`;
   document.querySelectorAll(".seg label").forEach(() => {});
   $("vmag").setAttribute("aria-pressed", S.view === "mag"); $("vafr").setAttribute("aria-pressed", S.view === "afr");

@@ -24,7 +24,7 @@ console.log('T5 r0', r0.toFixed(3), [['CO',1],['CO2',1],['H2O',1],['H2O',0.25]].
 // n_eff at 6, 8, 10 au for CO2 isothermal (paper 4.7, 6.4, 10.7)
 console.log('neff CO2 iso', [6, 8, 10, 12, 15].map(r => (2 + M.kSlope(r, 'CO2', 0.25)).toFixed(1)).join(' '));
 console.log('neff CO2 sub', [6, 8, 10].map(r => (2 + M.kSlope(r, 'CO2', 1)).toFixed(2)).join(' '), 'CO sub', [6, 8, 10].map(r => (2 + M.kSlope(r, 'CO', 1)).toFixed(2)).join(' '));
-// energy budget
+// power budget
 console.log('NEOWISE f(3.5km)', (5.27e30 / M.qMax(3.5, 0.337, 'H2O', 1)).toFixed(3), '3I f(1.3km)', (4e28 / M.qMax(1.3, 1.49, 'H2O', 1)).toFixed(2), (5.15e28 / M.qMax(1.3, 1.49, 'H2O', 1)).toFixed(2));
 console.log('envelope q=1', M.envelope(1, 0.25).toFixed(2), M.envelope(1, 1).toFixed(2));
 // a short-period ellipse sanity check: 67P-like orbit r at perihelion and aphelion
@@ -33,7 +33,7 @@ const P = 2 * Math.PI / (0.01720209895 / Math.pow(1.243 / (1 - 0.641), 1.5));
 console.log('67P r(T)', M.ephem(p67, iso('2015-08-13')).r.toFixed(3), 'r(T+P/2)', M.ephem(p67, iso('2015-08-13') + P / 2 * 86400000).r.toFixed(3), 'Q', (1.243 * (1 + 0.641) / (1 - 0.641)).toFixed(3));
 // dust mantle (paper: 89 of 123 pass; thick mantle at 1 au Ts ~ 403 K, Ti ~ 174 K; envelope q=1 [-3.20, -1.01])
 const bm = M.balance(1, 'H2O', 1, 0.03); console.log('mantle Ts Ti', bm.T.toFixed(0), bm.Ti.toFixed(0), 'env q=1', M.envelopeMantle(1).map(v => v.toFixed(2)).join(' '), 'q=0.1', M.envelopeMantle(0.1).map(v => v.toFixed(2)).join(' '));
-// two ices on separate patches (Eqs. 16, 17): k = 1 gives the single ice; near the energy limit n is close to 7/2; water's dust share for C/2019 L3 (paper: 4 % at 7 au, 90 % at 4 au)
+// two ices on separate patches (Eq. 14): k = 1 gives the single ice; near full activity n is close to 7/2; water's dust share for C/2019 L3 (paper: 4 % at 7 au, 90 % at 4 au)
 {
   const one = [{ x: 'CO', w: 1 }], mix = [{ x: 'CO', w: 0.04 }, { x: 'H2O', w: 0.96 }];
   const d1 = Math.abs(M.etaMix(5, one, 1) - M.eta(5, 'CO', 1)), d2 = Math.abs(M.kSlopeMix(5, [{ x: 'CO', w: 1 }, { x: 'H2O', w: 0 }], 1) - M.kSlope(5, 'CO', 1));

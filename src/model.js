@@ -1,4 +1,4 @@
-// ---- Model core: energy balance (Eqs. 8–11 of the paper), the physical law (Eq. 15), Afrho, orbits. Pure functions; also runs in Node for tests.
+// ---- Model core: power balance (Eqs. 8–11 of the paper), the physical law (Eq. 14), Afrho, orbits. Pure functions; also runs in Node for tests.
 const AU_CM = 1.495978707e13, ARCSEC = Math.PI / 180 / 3600, DEG = Math.PI / 180;
 const S0 = 1361.0, SIG = 5.670374e-8, KB = 1.380649e-23, AMU = 1.66054e-27;
 const A_B = 0.01, EPS = 0.9, KG = 0.01720209895;
@@ -8,7 +8,7 @@ const ICES = { H2O: [3.56e12, 6141.667, 18.015], CO2: [1.23e12, 3167.8, 44.01], 
 function latent(x) { const [, B, mu] = ICES[x]; return B * KB / (mu * AMU); }
 function zflux(T, x) { const [A, B, mu] = ICES[x]; const m = mu * AMU; return A * Math.exp(-B / T) * Math.sqrt(m / (2 * Math.PI * KB * T)); }
 
-// Surface temperature T, ice temperature Ti, mass flux Z [kg m^-2 s^-1] and energy share eta for ice x
+// Surface temperature T, ice temperature Ti, mass flux Z [kg m^-2 s^-1] and sublimation share eta for ice x
 // at r [au], <cos zeta> = c, under a dust mantle of conductance h [W m^-2 K^-1] (h = Infinity: bare ice,
 // Eq. 8; otherwise surface: fin = eps sigma T^4 + h (T - Ti), ice front: h (T - Ti) = Z(Ti) L)
 function balance(r, x, c, h = Infinity) {
@@ -29,7 +29,7 @@ function eta(r, x, c, h = Infinity) {
   if (v === undefined) { v = balance(r, x, c, h).eta; if (_eta.size > 300000) _eta.clear(); _eta.set(key, v); }
   return v;
 }
-// local slope k = 3/2 - dln(eta)/dln(r); activity index n = 2 + k = 3/2 + n_Q (Eqs. 12, 13)
+// local slope k = 3/2 - dln(eta)/dln(r); coma activity index n_C = 2 + k = 3/2 + n_Q (Eqs. 7, 12)
 function kSlope(r, x, c, hm = Infinity) {
   const h = 1e-3, a = eta(r * (1 + h), x, c, hm), b = eta(r * (1 - h), x, c, hm);
   if (!(a > 1e-300 && b > 1e-300)) return NaN;
@@ -37,7 +37,7 @@ function kSlope(r, x, c, hm = Infinity) {
 }
 
 // Several ices on separate patches (Sec. IV of the paper): mix = [{x, w}] with shares w summing to 1.
-// etaMix is the bracket sum_i k_i eta_i of Eq. (15); kSlopeMix its local slope, n = 2 + k.
+// etaMix is the bracket sum_i k_i eta_i of Eq. (14); kSlopeMix its local slope, n = 2 + k.
 function etaMix(r, mix, c, h = Infinity) { let v = 0; for (const p of mix) if (p.w > 0) v += p.w * eta(r, p.x, c, h); return v; }
 function kSlopeMix(r, mix, c, hm = Infinity) {
   if (mix.length === 1) return kSlope(r, mix[0].x, c, hm);
@@ -46,7 +46,7 @@ function kSlopeMix(r, mix, c, hm = Infinity) {
   return 1.5 - (Math.log(a) - Math.log(b)) / (Math.log(1 + h) - Math.log(1 - h));
 }
 
-// Eq. (15), written with the nucleus as reference: m1 = HN - 2.5 lg mu, nu = 10^(-0.4 beta alpha) / mu.
+// Eq. (14), written with the nucleus as reference: m1 = HN - 2.5 lg mu, nu = 10^(-0.4 beta alpha) / mu.
 // s = {HN, beta, j, ap, msun}; ap in arcsec (j = 1) or km (j = 0); K = Afrho scale [cm]
 function muFrom(K, s) {
   const f = Math.pow(10, 0.4 * (s.HN - s.msun));
@@ -109,7 +109,7 @@ function ephem(el, ms) {
            elong: Math.acos(cl((R * R + D * D - r * r) / (2 * R * D))) / DEG };
 }
 
-// ---- Energy budget (criterion ii): largest water production of a projected disk of radius RN [km]
+// ---- Power budget (criterion ii): largest water production of a projected disk of radius RN [km]
 function qMax(RN, r, x, c) {
   const F = (1 - A_B) * S0 / (r * r), m = ICES[x][2] * AMU;
   return Math.PI * (RN * 1e3) ** 2 * F * eta(r, x, c) / latent(x) / m;

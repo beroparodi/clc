@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Light Up a Comet</title>
-<meta name="description" content="Interactive companion to the paper 'How bright will a comet get? The physical magnitude law may tell': energy share of CO, CO2 and water ice, the physical and the empirical magnitude law, fits and forecasts.">
+<meta name="description" content="Interactive companion to the paper 'How bright will a comet get? The physical magnitude law may tell': sublimation share of CO, CO2 and water ice, the physical and the empirical magnitude law, fits and forecasts.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -123,7 +123,7 @@ footer p{margin:.4rem 0}
 <header>
   <h1>Light Up a Comet</h1>
   <p>Pick a comet, the ice that drives it, or two ices on separate patches, and how the Sun’s heat spreads over the nucleus. The standard model of a sublimating nucleus, as in <em>How bright will a comet get? The physical magnitude law may tell</em>, gives the share η of the absorbed sunlight that goes into sublimation; the physical law turns it into the magnitude in your aperture. Fit the physical and the empirical law to photometry, before and after perihelion if you like, compare the ices and test forecasts.</p>
-  <p class="eq">m = m<sub>1</sub> + 5 log Δ + 8.75 log r − 2.5 log Φ(r), &nbsp;Φ = Σ k<sub>i</sub>η<sub>i</sub>(r) + ν r<sup>3/2</sup> &nbsp;(Eq. 15), &nbsp;Afρ = K Σ k<sub>i</sub>η<sub>i</sub>(r) r<sup>−3/2</sup></p>
+  <p class="eq">m = m<sub>1</sub> + 5 log Δ + 8.75 log r − 2.5 log Φ(r), &nbsp;Φ = Σ k<sub>i</sub>η<sub>i</sub>(r) + ν r<sup>3/2</sup> &nbsp;(Eq. 14), &nbsp;Afρ = K Σ k<sub>i</sub>η<sub>i</sub>(r) r<sup>−3/2</sup></p>
   <nav class="links" aria-label="Paper, code and citation">
     <span>Paper: B. R. Parodi, <em>How bright will a comet get?</em> (in preparation)</span>
     <a href="https://github.com/beroparodi/clc" target="_blank" rel="noopener">Code on GitHub</a>
@@ -206,7 +206,7 @@ footer p{margin:.4rem 0}
       </div></div>
     <div id="kbox"><div class="lab"><label for="kmix">Dust share of the first ice <span class="m">k</span></label><output id="kmixo"></output></div>
       <input id="kmix" type="range" min="0" max="1" step="0.01">
-      <p class="hint">Each ice sublimates from its own patches with its own energy balance (Sec. IV of the paper); <span class="m">k</span> and 1 − <span class="m">k</span> are the shares of the dust the two ices would supply if both were energy-limited, so Φ = kη<sub>1</sub> + (1 − k)η<sub>2</sub> + νr<sup>3/2</sup> (Eq. 15). Fit finds <span class="m">k</span>.</p></div>
+      <p class="hint">Each ice sublimates from its own patches with its own power balance (Sec. IV of the paper); <span class="m">k</span> and 1 − <span class="m">k</span> are the shares of the dust the two ices would supply if both were fully active, so Φ = kη<sub>1</sub> + (1 − k)η<sub>2</sub> + νr<sup>3/2</sup> (Eq. 14). Fit finds <span class="m">k</span>.</p></div>
     <div><div class="lab"><label for="cz">Heat spread <span class="m">⟨cos ζ⟩</span></label><output id="czo"></output></div>
       <input id="cz" type="range" min="0.25" max="1" step="0.01">
       <div class="ends"><span>isothermal ¼</span><span>subsolar 1</span></div></div>
@@ -230,7 +230,7 @@ footer p{margin:.4rem 0}
       <div><div class="lab"><label for="y0">From</label></div><input id="y0" type="text" inputmode="numeric"></div>
       <div><div class="lab"><label for="y1">To</label></div><input id="y1" type="text" inputmode="numeric"></div>
     </div>
-    <p class="hint">Sun: V −26.76, r′ −26.93. Use H<sub>N</sub> and m<sub>⊙</sub> in the band of your photometry; From and To set the years shown. In an aperture of fixed angle (j = 1) the coma fades as Δ<sup>−1</sup>, not as Δ<sup>−2</sup> as in Eq. 15.</p>
+    <p class="hint">Sun: V −26.76, r′ −26.93. Use H<sub>N</sub> and m<sub>⊙</sub> in the band of your photometry; From and To set the years shown. In an aperture of fixed angle (j = 1) the coma fades as Δ<sup>−1</sup>, not as Δ<sup>−2</sup> as in Eq. 14.</p>
     <hr class="sep">
     <div><div class="lab"><label for="obs">Photometry: date, magnitude, error</label><output id="nobs"></output></div>
       <textarea id="obs" rows="5" spellcheck="false"></textarea>
@@ -245,7 +245,7 @@ footer p{margin:.4rem 0}
       <label class="check"><input id="split" type="checkbox"> fit before and after perihelion separately</label>
       <label class="check" for="cut">fit only before</label><input id="cut" type="text" placeholder="all data" style="width:9em">
     </div>
-    <p class="hint">The empirical law <span class="m">m = m<sub>0</sub> + 5 log Δ + 2.5 n log r</span> (Eq. 2) is fitted (<span class="m">m<sub>0</sub></span> and <span class="m">n</span>) to the same points as the coma. “Before and after perihelion” fits both laws separately to the two arcs, as in Sec. V of the paper. With a date, Fit and Compare use only earlier points; later ones (open circles) test both forecasts. In our test of 24 comets the physical law beats the empirical law with fitted <span class="m">n</span> for 7 of the 9 comets whose ice switches on within the fitted arc, against 3 of the other 15; a fixed <span class="m">n</span> = 3.5, the law’s energy limit, does about as well: the gain comes mostly from knowing that a steep rise cannot last.</p>
+    <p class="hint">The empirical law <span class="m">m = m<sub>0</sub> + 5 log Δ + 2.5 n log r</span> (Eq. 2) is fitted (<span class="m">m<sub>0</sub></span> and <span class="m">n</span>) to the same points as the coma. “Before and after perihelion” fits both laws separately to the two arcs, as in Sec. V of the paper. With a date, Fit and Compare use only earlier points; later ones (open circles) test both forecasts. In our test of 24 comets the physical law beats the empirical law with fitted <span class="m">n</span> for 7 of the 9 comets whose ice switches on within the fitted arc, against 3 of the other 15; a fixed <span class="m">n</span> = 3.5, the law’s value for a fully active ice, does about as well: the gain comes mostly from knowing that a steep rise cannot last.</p>
     <div id="score" class="score" aria-live="polite"></div>
   </section>
 
@@ -260,27 +260,27 @@ footer p{margin:.4rem 0}
     <div class="pair">
       <figure>
         <figcaption><span>Share of power used, <span class="m">η</span> (Eq. 11)</span><span class="key">band: from ⟨cos ζ⟩ = ¼ to 1</span></figcaption>
-        <canvas id="c2" role="img" aria-label="Energy share eta of CO, CO2 and water ice against distance from the Sun"></canvas>
+        <canvas id="c2" role="img" aria-label="Sublimation share eta of CO, CO2 and water ice against distance from the Sun"></canvas>
       </figure>
       <figure>
-        <figcaption><span>Activity index <span class="m">n = 3/2 + n<sub>Q</sub></span> (Eq. 13)</span><span class="key"><span class="sw d"></span>Holt et al. 2026</span></figcaption>
-        <canvas id="c3" role="img" aria-label="Local activity index n against distance from the Sun for the three ices, with the empirical fit of Holt et al. 2026"></canvas>
+        <figcaption><span>Activity index of the coma <span class="m">n<sub>C</sub> = 3/2 + n<sub>Q</sub></span> (Eqs. 7, 12)</span><span class="key"><span class="sw d"></span>Holt et al. 2026</span></figcaption>
+        <canvas id="c3" role="img" aria-label="Local activity index n_C of the coma against distance from the Sun for the three ices, with the empirical fit of Holt et al. 2026"></canvas>
       </figure>
     </div>
     <figure>
       <figcaption><span>All ices for this comet</span>
         <label class="inl" for="ref">Afρ growth from <input id="ref" type="text" placeholder="YYYY-MM-DD"> to the date line</label></figcaption>
       <div class="tbl"><table id="tab">
-        <thead><tr><th scope="col">Ice and heat spread</th><th scope="col"><span class="m">n<sub>Q</sub></span> at date</th><th scope="col"><span class="m">n</span> at date</th><th scope="col"><span class="m">Afρ</span> growth</th><th scope="col"><span class="m">m</span> at date</th><th scope="col">fit <span class="m">χ²<sub>ν</sub></span></th></tr></thead>
+        <thead><tr><th scope="col">Ice and heat spread</th><th scope="col"><span class="m">n<sub>Q</sub></span> at date</th><th scope="col"><span class="m">n<sub>C</sub></span> at date</th><th scope="col"><span class="m">Afρ</span> growth</th><th scope="col"><span class="m">m</span> at date</th><th scope="col">fit <span class="m">χ²<sub>ν</sub></span></th></tr></thead>
         <tbody></tbody></table></div>
-      <p class="hint" style="padding:6px 4px 0">Click a row to use it. “Compare ices” fits K (and H<sub>N</sub> if ticked) for every row, and the share k for the pairs of ices; the smallest χ²<sub>ν</sub> is in green. n<sub>Q</sub> is the production index (Eq. 12), n the activity index of the coma.</p>
+      <p class="hint" style="padding:6px 4px 0">Click a row to use it. “Compare ices” fits K (and H<sub>N</sub> if ticked) for every row, and the share k for the pairs of ices; the smallest χ²<sub>ν</sub> is in green. n<sub>Q</sub> is the production index (Eq. 12), n<sub>C</sub> the activity index of the coma (Eq. 7).</p>
     </figure>
   </div>
 </div>
 
 <div class="lower">
   <figure>
-    <figcaption><span>Energy budget of the nucleus</span></figcaption>
+    <figcaption><span>Power budget of the nucleus</span></figcaption>
     <div class="budget">
       <select id="bpre" aria-label="Example">
         <option value="neo">C/2020 F3 (NEOWISE) at its water peak</option>
@@ -305,12 +305,12 @@ footer p{margin:.4rem 0}
 </div>
 
 <footer>
-  <p>Constants of the paper: S<sub>⊙</sub> = 1361 W m⁻², Bond albedo A<sub>B</sub> = 0.01, emissivity ε = 0.9, vapor pressures P<sub>X</sub> = A<sub>X</sub> e<sup>−B<sub>X</sub>/T</sup> and latent heats L<sub>X</sub> = B<sub>X</sub>k<sub>B</sub>/m<sub>X</sub> (Table I, where the mass of a molecule is called μ; here μ is the brightness ratio below); energy balance Eq. (8), sublimation flux Eq. (10). K is the Afρ the comet would have at 1 au if all absorbed power went into sublimation; μ follows from K, H<sub>N</sub>, m<sub>⊙</sub> and the aperture, and gives the constants of Eq. (15), m<sub>1</sub> = H<sub>N</sub> − 2.5 log μ and ν = 10<sup>−0.4β<sub>N</sub>α</sup>/μ. The dust speed is taken ∝ r<sup>−1/2</sup>. A dust mantle of conductance h = κ/d splits the energy balance into one at the surface, (1−A<sub>B</sub>)S<sub>⊙</sub>⟨cos ζ⟩/r² = εσT<sub>s</sub>⁴ + h(T<sub>s</sub> − T<sub>i</sub>), and one at the ice front, h(T<sub>s</sub> − T<sub>i</sub>) = Z<sub>X</sub>(T<sub>i</sub>)L<sub>X</sub>. Orbits are two-body conics with a low-precision Earth, accurate to a few 0.01 au.</p>
+  <p>Constants of the paper: S<sub>⊙</sub> = 1361 W m⁻², Bond albedo A<sub>B</sub> = 0.01, emissivity ε = 0.9, vapor pressures P<sub>X</sub> = A<sub>X</sub> e<sup>−B<sub>X</sub>/T</sup> and latent heats L<sub>X</sub> = B<sub>X</sub>k<sub>B</sub>/m<sub>X</sub> (Table I, where the mass of a molecule is called μ; here μ is the brightness ratio below); power balance Eq. (8), sublimation flux Eq. (10). K is the Afρ the comet would have at 1 au if all absorbed power went into sublimation; μ follows from K, H<sub>N</sub>, m<sub>⊙</sub> and the aperture, and gives the constants of Eq. (14), m<sub>1</sub> = H<sub>N</sub> − 2.5 log μ and ν = 10<sup>−0.4β<sub>N</sub>α</sup>/μ. The dust speed is taken ∝ r<sup>−1/2</sup>. A dust mantle of conductance h = κ/d splits the power balance into one at the surface, (1−A<sub>B</sub>)S<sub>⊙</sub>⟨cos ζ⟩/r² = εσT<sub>s</sub>⁴ + h(T<sub>s</sub> − T<sub>i</sub>), and one at the ice front, h(T<sub>s</sub> − T<sub>i</sub>) = Z<sub>X</sub>(T<sub>i</sub>)L<sub>X</sub>. Orbits are two-body conics with a low-precision Earth, accurate to a few 0.01 au.</p>
   <p>Data: C/2014 UN271 photometry from Kelley et al. 2022 (LOOK) and Roth et al. 2025 (LCO), its orbit from the JPL Small-Body Database; C/2024 T5 elements from an earlier version of this work, C/2025 Y1 from the JPL Small-Body Database; elements of the other comets from the JPL Small-Body Database (via TheSkyLive and Wikipedia), for Hale–Bopp from NASA’s NSSDC; nucleus sizes of 1P (Giotto), 2P (Fernández et al. 2000), 29P (Schambeau et al. 2015), 67P (Rosetta), Hale–Bopp (NSSDC) and Hyakutake (Lisse et al. 1999, infrared), each with the stated albedo; SWAN exponents from Combi et al. 2019, 2021 (six comets, Icarus 365, 114509) and 2025 (K2 and E3, fitted to their tables); activity index fit from Holt et al. 2026; NEOWISE from Combi et al. 2021 (ApJL 907, L38); 3I/ATLAS from Tan et al. 2026 and Hui et al. 2026. Light curves: COBS Comet Observation Database (cobs.si), binned, CC BY-NC-SA 4.0; UN271 magnitudes from COBS moved to r′ in 6″ as described in the tool’s data notes (the open circles of Fig. 4c of the paper).</p>
 </footer>
 </div>
 <script>
-// ---- Model core: energy balance (Eqs. 8–11 of the paper), the physical law (Eq. 15), Afrho, orbits. Pure functions; also runs in Node for tests.
+// ---- Model core: power balance (Eqs. 8–11 of the paper), the physical law (Eq. 14), Afrho, orbits. Pure functions; also runs in Node for tests.
 const AU_CM = 1.495978707e13, ARCSEC = Math.PI / 180 / 3600, DEG = Math.PI / 180;
 const S0 = 1361.0, SIG = 5.670374e-8, KB = 1.380649e-23, AMU = 1.66054e-27;
 const A_B = 0.01, EPS = 0.9, KG = 0.01720209895;
@@ -320,7 +320,7 @@ const ICES = { H2O: [3.56e12, 6141.667, 18.015], CO2: [1.23e12, 3167.8, 44.01], 
 function latent(x) { const [, B, mu] = ICES[x]; return B * KB / (mu * AMU); }
 function zflux(T, x) { const [A, B, mu] = ICES[x]; const m = mu * AMU; return A * Math.exp(-B / T) * Math.sqrt(m / (2 * Math.PI * KB * T)); }
 
-// Surface temperature T, ice temperature Ti, mass flux Z [kg m^-2 s^-1] and energy share eta for ice x
+// Surface temperature T, ice temperature Ti, mass flux Z [kg m^-2 s^-1] and sublimation share eta for ice x
 // at r [au], <cos zeta> = c, under a dust mantle of conductance h [W m^-2 K^-1] (h = Infinity: bare ice,
 // Eq. 8; otherwise surface: fin = eps sigma T^4 + h (T - Ti), ice front: h (T - Ti) = Z(Ti) L)
 function balance(r, x, c, h = Infinity) {
@@ -341,7 +341,7 @@ function eta(r, x, c, h = Infinity) {
   if (v === undefined) { v = balance(r, x, c, h).eta; if (_eta.size > 300000) _eta.clear(); _eta.set(key, v); }
   return v;
 }
-// local slope k = 3/2 - dln(eta)/dln(r); activity index n = 2 + k = 3/2 + n_Q (Eqs. 12, 13)
+// local slope k = 3/2 - dln(eta)/dln(r); coma activity index n_C = 2 + k = 3/2 + n_Q (Eqs. 7, 12)
 function kSlope(r, x, c, hm = Infinity) {
   const h = 1e-3, a = eta(r * (1 + h), x, c, hm), b = eta(r * (1 - h), x, c, hm);
   if (!(a > 1e-300 && b > 1e-300)) return NaN;
@@ -349,7 +349,7 @@ function kSlope(r, x, c, hm = Infinity) {
 }
 
 // Several ices on separate patches (Sec. IV of the paper): mix = [{x, w}] with shares w summing to 1.
-// etaMix is the bracket sum_i k_i eta_i of Eq. (15); kSlopeMix its local slope, n = 2 + k.
+// etaMix is the bracket sum_i k_i eta_i of Eq. (14); kSlopeMix its local slope, n = 2 + k.
 function etaMix(r, mix, c, h = Infinity) { let v = 0; for (const p of mix) if (p.w > 0) v += p.w * eta(r, p.x, c, h); return v; }
 function kSlopeMix(r, mix, c, hm = Infinity) {
   if (mix.length === 1) return kSlope(r, mix[0].x, c, hm);
@@ -358,7 +358,7 @@ function kSlopeMix(r, mix, c, hm = Infinity) {
   return 1.5 - (Math.log(a) - Math.log(b)) / (Math.log(1 + h) - Math.log(1 - h));
 }
 
-// Eq. (15), written with the nucleus as reference: m1 = HN - 2.5 lg mu, nu = 10^(-0.4 beta alpha) / mu.
+// Eq. (14), written with the nucleus as reference: m1 = HN - 2.5 lg mu, nu = 10^(-0.4 beta alpha) / mu.
 // s = {HN, beta, j, ap, msun}; ap in arcsec (j = 1) or km (j = 0); K = Afrho scale [cm]
 function muFrom(K, s) {
   const f = Math.pow(10, 0.4 * (s.HN - s.msun));
@@ -421,7 +421,7 @@ function ephem(el, ms) {
            elong: Math.acos(cl((R * R + D * D - r * r) / (2 * R * D))) / DEG };
 }
 
-// ---- Energy budget (criterion ii): largest water production of a projected disk of radius RN [km]
+// ---- Power budget (criterion ii): largest water production of a projected disk of radius RN [km]
 function qMax(RN, r, x, c) {
   const F = (1 - A_B) * S0 / (r * r), m = ICES[x][2] * AMU;
   return Math.PI * (RN * 1e3) ** 2 * F * eta(r, x, c) / latent(x) / m;
@@ -461,7 +461,7 @@ const ICE_VAR = { CO: "--co", CO2: "--co2", H2O: "--h2o" };
 const SCEN = [
   { x: "CO", c: 1, lab: "CO, subsolar" }, { x: "CO2", c: 1, lab: "CO₂, subsolar" }, { x: "CO2", c: 0.25, lab: "CO₂, isothermal" },
   { x: "H2O", c: 1, lab: "H₂O, subsolar" }, { x: "H2O", c: 0.25, lab: "H₂O, isothermal" }];
-// two ices on separate patches (Eq. 15), both at the subsolar point; the share k is fitted
+// two ices on separate patches (Eq. 14), both at the subsolar point; the share k is fitted
 const PAIRS = [
   { x: "CO", y: "H2O", c: 1, lab: "CO + H₂O, subsolar" }, { x: "CO2", y: "H2O", c: 1, lab: "CO₂ + H₂O, subsolar" },
   { x: "CO", y: "CO2", c: 1, lab: "CO + CO₂, subsolar" }];
@@ -515,7 +515,7 @@ Object.assign(PRESETS, {
       note: "The bright comet of October 2024; perihelion 2024 Sep 27 at 0.39 au on a nearly parabolic orbit. H<sub>N</sub> is a placeholder; K is fitted to the COBS magnitudes. CO₂ fits the whole arc far better than water (χ²<sub>ν</sub> 19 against 120): it was active at 7 au." }),
   neo: MORE({ q: "0.295", e: "0.99921", i: "128.94", Om: "61.010", w: "37.279", T: "2020-07-03 12:00" },
     { lk: 4.379, ice: "H2O", HN: 15, y0: 2019, y1: 2022, ref: "2019-11-03",
-      note: "The bright comet of July 2020; perihelion 2020 Jul 3 at 0.29 au. Its peak water production needs a nucleus of at least 3.5 km radius: see the energy budget below. H<sub>N</sub> is a placeholder; K is fitted to the COBS magnitudes. The faint points in April 2020 are small-aperture CCD magnitudes." }),
+      note: "The bright comet of July 2020; perihelion 2020 Jul 3 at 0.29 au. Its peak water production needs a nucleus of at least 3.5 km radius: see the power budget below. H<sub>N</sub> is a placeholder; K is fitted to the COBS magnitudes. The faint points in April 2020 are small-aperture CCD magnitudes." }),
   hb: MORE({ q: "0.9141", e: "0.9951", i: "89.43", Om: "282.47", w: "130.59", T: "1997-04-01 03:19" },
     { lk: 7.324, split: true, post: { lk: 7.2718, k: 1 }, ice: "CO", HN: 11.39, y0: 1995, y1: 2000, ref: "1995-07-23",
       note: "The Great Comet of 1997, discovered on 1995 Jul 23 at 7.1 au, far beyond the water zone; perihelion 1997 Apr 1 at 0.91 au. H<sub>N</sub> for a nucleus 35 km across (30–40 km) and p = 0.04. As in Fig. S1b of the paper's supplementary material, CO and the empirical law are fitted separately before and after perihelion: rms 0.31 and 0.24 mag, <i>n</i> = 3.1 and 3.5, and the active area after perihelion is 0.89 times that before. Water alone does not fit (Compare ices). For the forecast of Fig. 4a, untick “before and after perihelion”, enter 1996-03-15 under “fit only before” and Fit: the empirical law (<i>n</i> = 4.6) misses the rest by 1.2 mag, CO by 0.4 mag." }),
@@ -524,7 +524,7 @@ Object.assign(PRESETS, {
       note: "The Great Comet of 1996. Discovered on 1996 Jan 30, it passed 0.10 au from the Earth on Mar 25, five weeks before perihelion at 0.23 au: the magnitude view shows the close approach. H<sub>N</sub> from the nucleus seen in the infrared (Lisse et al. 1999: D ≈ 4.8 km, with p = 0.04; radar echoes suggested 1–3 km); K is fitted to the COBS magnitudes. Its SWAN water exponents are the points at q = 0.23 au below." }),
   i3: MORE({ q: "1.35638454", e: "6.13941774", i: "175.11310480", Om: "322.15684249105", w: "128.01051366675", T: fmtDT(msOf(2460977.9814)) },
     { lk: 3.999, ice: "H2O", HN: 17.04, y0: 2025, y1: 2027, ref: "2025-07-16",
-      note: "The third interstellar object, on a hyperbola with e = 6.14; perihelion 2025 Oct 29 at 1.36 au. H<sub>N</sub> from R<sub>N</sub> = 1.3 km and p = 0.04; K is fitted to the COBS magnitudes. Its water production exceeds what this nucleus can deliver: see the energy budget below." }),
+      note: "The third interstellar object, on a hyperbola with e = 6.14; perihelion 2025 Oct 29 at 1.36 au. H<sub>N</sub> from R<sub>N</sub> = 1.3 km and p = 0.04; K is fitted to the COBS magnitudes. Its water production exceeds what this nucleus can deliver: see the power budget below." }),
 });
 
 // comets of our forecast test of 24 light curves (supplementary material): ice and K from the first half, cut at the split
@@ -583,7 +583,7 @@ Object.assign(PRESETS, {
       note: "The “comet of the century” of 1973 that disappointed. Discovered on 1973 Mar 18 at 4.6 au; extrapolations with a fixed index (<i>n</i> = 4 to 6) promised magnitude −10 or brighter, but it peaked near −3 at perihelion on 1973 Dec 28, 0.14 au from the Sun and too close to it for ground observers. COBS holds almost no magnitudes from before October 1973. With the rules of our forecast test (it is not one of the 24 comets), CO at the subsolar point fits the points before the cut; the forecast rms is 1.55 mag, against 1.46 for the empirical law with fitted <i>n</i> (<i>n</i> = 2.8) and 1.55 for <i>n</i> = 3.5. No law foresees how fast it faded after perihelion: with one μ before and one after, μ<sub>post</sub>/μ<sub>pre</sub> = 0.27. H<sub>N</sub> is a placeholder." }),
   ison: MORE({ q: "0.01246672509220626", e: "1.00000509491957", i: "62.16289620932959", Om: "295.6865414817095", w: "345.5411966905318", T: fmtDT(msOf(2456625.264531166622)) },
     { lk: 4.1954, ice: "CO", cz: 1, HN: 15, y0: 2012, y1: 2014, ref: "2012-12-17", cut: "2013-05-06",
-      note: "The sungrazer of 2013, which prompted Parodi (2013), the forerunner of this model. Discovered on 2012 Sep 21 at 6.3 au; early extrapolations promised a comet brighter than the full Moon. Its brightness stalled in the first half of 2013 and rose again after its conjunction with the Sun; it reached about magnitude −2 on Nov 27 and disintegrated at perihelion on 2013 Nov 28, 0.012 au from the Sun’s centre. The last COBS bin is Nov 18. With the rules of our forecast test (it is not one of the 24 comets), CO at the subsolar point fits the points before the cut; the forecast rms is 1.29 mag, against 3.67 for the empirical law with fitted <i>n</i> (<i>n</i> = 0.1, the stall) and 1.30 for <i>n</i> = 3.5. The fitted index, frozen in the stall, misses the rise by magnitudes; the energy-limited model does not. It forecasts about magnitude −0.5 for Nov 27 and −10 for perihelion: the comet broke up before. H<sub>N</sub> is a placeholder (the nucleus was less than 1 km across)." }),
+      note: "The sungrazer of 2013, which prompted Parodi (2013), the forerunner of this model. Discovered on 2012 Sep 21 at 6.3 au; early extrapolations promised a comet brighter than the full Moon. Its brightness stalled in the first half of 2013 and rose again after its conjunction with the Sun; it reached about magnitude −2 on Nov 27 and disintegrated at perihelion on 2013 Nov 28, 0.012 au from the Sun’s centre. The last COBS bin is Nov 18. With the rules of our forecast test (it is not one of the 24 comets), CO at the subsolar point fits the points before the cut; the forecast rms is 1.29 mag, against 3.67 for the empirical law with fitted <i>n</i> (<i>n</i> = 0.1, the stall) and 1.30 for <i>n</i> = 3.5. The fitted index, frozen in the stall, misses the rise by magnitudes; the physical law does not. It forecasts about magnitude −0.5 for Nov 27 and −10 for perihelion: the comet broke up before. H<sub>N</sub> is a placeholder (the nucleus was less than 1 km across)." }),
 });
 
 // COBS light curves (data/cobs_lightcurves.txt, CC BY-NC-SA 4.0), appended to the presets
@@ -857,7 +857,7 @@ function drawN() {
   clip(g, X, Y);
   const mute = css("--mute"), ink = css("--ink");
   g.strokeStyle = mute; g.setLineDash([2, 3]); g.beginPath(); g.moveTo(box.l, Y(3.5)); g.lineTo(box.r, Y(3.5)); g.stroke(); g.setLineDash([]);
-  g.fillStyle = mute; g.font = FONTS; g.textAlign = "left"; g.textBaseline = "top"; g.fillText("energy-limited 7/2", box.l + 4, Y(3.5) + 3);
+  g.fillStyle = mute; g.font = FONTS; g.textAlign = "left"; g.textBaseline = "top"; g.fillText("fully active 7/2", box.l + 4, Y(3.5) + 3);
   if (S.nbox) { const b = S.nbox, oc = css("--obs"); g.fillStyle = alpha(oc, 0.22); g.strokeStyle = oc; g.fillRect(X(b.r0), Y(b.n + b.s), X(b.r1) - X(b.r0), Y(b.n - b.s) - Y(b.n + b.s)); g.strokeRect(X(b.r0), Y(b.n + b.s), X(b.r1) - X(b.r0), Y(b.n - b.s) - Y(b.n + b.s)); g.fillStyle = oc; g.textAlign = "left"; g.textBaseline = "middle"; g.fillText("UN271", X(b.r1) + 5, Y(b.n)); }
   const holt = (r) => 0.40 * r * (Math.log(r) + 1) - 1.78;
   path(g, curveR(2.5, 10, 60), curveR(2.5, 10, 60).map(holt), X, Y, { c: ink, w: 1.4, dash: [6, 4] });
@@ -889,7 +889,7 @@ function readouts() {
     cell('Phase <span class="m">α</span>', el.full ? g.alpha.toFixed(1) + "°" : "—") + cell('Magnitude <span class="m">m</span>', mi(mtxt)) + cell("Nucleus share", share) +
     (two ? cell(`T ${ICE_NAME[P.ice]} / ${ICE_NAME[P.ice2]}`, `${bal.T.toFixed(0)} / ${T2.toFixed(0)} K`) : cell(Number.isFinite(P.h) ? "Surface / ice T" : "Surface T", Number.isFinite(P.h) ? `${bal.T.toFixed(0)} / ${bal.Ti.toFixed(0)} K` : bal.T.toFixed(0) + " K")) +
     cell(two ? '<span class="m">Σ kη</span>' : '<span class="m">η<sub>' + ICE_NAME[P.ice] + "</sub></span>", sci(et, 3)) +
-    cell('<span class="m">n<sub>Q</sub></span> (<span class="m">n</span>)', Number.isFinite(k) ? `${(k + 0.5).toFixed(2)} (${(k + 2).toFixed(1)})` : "—") + cell('<span class="m">Afρ</span> (cm)', sci(afrho(pc.K, g.r, et), 3));
+    cell('<span class="m">n<sub>Q</sub></span> (<span class="m">n<sub>C</sub></span>)', Number.isFinite(k) ? `${(k + 0.5).toFixed(2)} (${(k + 2).toFixed(1)})` : "—") + cell('<span class="m">Afρ</span> (cm)', sci(afrho(pc.K, g.r, et), 3));
 }
 function table() {
   const s = S.series, P = s.P, el = s.el, tb = $("tab").tBodies[0];
@@ -983,13 +983,13 @@ function doCompare() {
 }
 function score(html, cls) { const e = $("score"); e.innerHTML = html; e.className = "score " + (cls || ""); }
 
-// ---------- energy budget and SWAN backtest
+// ---------- power budget and SWAN backtest
 const BPRE = { neo: { q: "5.27e30", r: "0.337", rn: "3.5" }, "3i": { q: "4.5e28", r: "1.49", rn: "1.3" } };
 function budget() {
   const Q = num($("bq").value), r = num($("br").value), RN = num($("brn").value);
   if (!(Q > 0 && r > 0 && RN > 0)) { $("bout").innerHTML = "Enter Q, r and R<sub>N</sub>."; return; }
   const qm = qMax(RN, r, "H2O", 1), f = Q / qm, rmin = RN * Math.sqrt(f);
-  $("bout").innerHTML = `Q<sub>max</sub> = ${sci(qm, 3)} s⁻¹ &nbsp;·&nbsp; f = ${f.toPrecision(3)} &nbsp;<span class="pill ${f <= 1 ? "ok" : "no"}">${f <= 1 ? "energy suffices" : "needs another source"}</span><br>smallest nucleus for f ≤ 1: R<sub>N</sub> = ${rmin.toPrecision(3)} km`;
+  $("bout").innerHTML = `Q<sub>max</sub> = ${sci(qm, 3)} s⁻¹ &nbsp;·&nbsp; f = ${f.toPrecision(3)} &nbsp;<span class="pill ${f <= 1 ? "ok" : "no"}">${f <= 1 ? "power suffices" : "needs another source"}</span><br>smallest nucleus for f ≤ 1: R<sub>N</sub> = ${rmin.toPrecision(3)} km`;
 }
 function drawSwan() {
   const cv = $("c4"), { g, w, h } = frame(cv, 0.5, 260, 420);
@@ -1049,7 +1049,7 @@ function labels() {
   const two = mixOf(P).length > 1; $("kbox").hidden = !two;
   if (two) $("kmixo").textContent = `${P.k.toFixed(2)} / ${(1 - P.k).toFixed(2)}`;
   const mu = muFrom(10 ** P.lk, P);
-  $("munote").innerHTML = `μ = ${sci(mu, 3)} for this aperture, so m<sub>1</sub> = H<sub>N</sub> − 2.5 log μ = ${(P.HN - 2.5 * Math.log10(mu)).toFixed(2).replace("-", "−")} (Eq. 15). D for p = 0.04.`;
+  $("munote").innerHTML = `μ = ${sci(mu, 3)} for this aperture, so m<sub>1</sub> = H<sub>N</sub> − 2.5 log μ = ${(P.HN - 2.5 * Math.log10(mu)).toFixed(2).replace("-", "−")} (Eq. 14). D for p = 0.04.`;
   const { obs, bad } = parseObs(); $("nobs").textContent = `${obs.length} point${obs.length === 1 ? "" : "s"}${bad.length ? `, ${bad.length} unreadable` : ""}`;
   document.querySelectorAll(".seg label").forEach(() => {});
   $("vmag").setAttribute("aria-pressed", S.view === "mag"); $("vafr").setAttribute("aria-pressed", S.view === "afr");
