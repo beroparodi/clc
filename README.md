@@ -1,8 +1,8 @@
-# How bright will a comet get? The thermal physics of a sunlit ice
+# How bright will a comet get? The physical magnitude law may tell
 
 The interactive tool and code accompanying
 
-> B. R. Parodi, *How bright will a comet get? The thermal physics of a sunlit ice* (in preparation)
+> B. R. Parodi, *How bright will a comet get? The physical magnitude law may tell* (in preparation)
 
 ## Light Up a Comet (interactive)
 
