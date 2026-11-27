@@ -1,8 +1,8 @@
-# How bright will a comet get? The physical magnitude law may tell
+# How bright will a comet get? A physical magnitude law
 
 The interactive tool and code accompanying
 
-> B. R. Parodi, *How bright will a comet get? The physical magnitude law may tell* (in preparation)
+> B. R. Parodi, *How bright will a comet get? A physical magnitude law* (in preparation)
 
 ## Light Up a Comet (interactive)
 
