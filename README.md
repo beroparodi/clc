@@ -1,8 +1,8 @@
-# How bright will a comet get? The physical magnitude law may tell
+# How bright will a comet get? The thermal physics of a sunlit ice
 
 The interactive tool and code accompanying
 
-> B. R. Parodi, *How bright will a comet get? The physical magnitude law may tell* (in preparation)
+> B. R. Parodi, *How bright will a comet get? The thermal physics of a sunlit ice* (in preparation)
 
 ## Light Up a Comet (interactive)
 
@@ -21,7 +21,7 @@ In an aperture of fixed angle the coma fades as Δ<sup>−1</sup>, not as Δ<sup
 - **Physics panels**: η(*r*) for the three ices and the coma index *n*<sub>C</sub>(*r*) (Fig. 2 of the paper), for two ices also Σ*k*η and its index, with the empirical fit of Holt et al. (2026) and the measured index of C/2014 UN271.
 - **Backtests**: the power budget of a nucleus (NEOWISE, 3I/ATLAS or your own numbers) and the SOHO/SWAN water-production exponents against the constant-area band.
 
-Built-in comets: from the paper, C/2014 UN271 (Bernardinelli–Bernstein) with the photometry used there (Fig. 4c), C/1995 O1 (Hale–Bopp) fitted before and after perihelion (Fig. S1b of the supplementary material; forecast of Fig. 4a), 12P/Pons–Brooks with the forecast of Fig. 4b, and C/2019 L3 (ATLAS) with CO and water ice on separate patches (Fig. S1c of the supplementary material); further, C/2024 T5 (ATLAS), C/2025 Y1 (ATLAS), 1P/Halley (return of 2061), 2P/Encke (2027), 29P/Schwassmann–Wachmann, 67P/Churyumov–Gerasimenko (2028), C/1996 B2 (Hyakutake), C/2020 F3 (NEOWISE), C/2023 A3 (Tsuchinshan–ATLAS) and the interstellar 3I/ATLAS; and the fifteen comets added to our forecast test, C/2014 Q2 (Lovejoy), C/2017 K2 (PANSTARRS), C/2017 T2 (PANSTARRS), C/2009 P1 (Garradd), C/2022 E3 (ZTF), C/2019 L3 (ATLAS), C/2011 L4 (PANSTARRS), C/2025 A6 (Lemmon), C/2015 V2 (Johnson), C/2020 V2 (ZTF), C/2013 US10 (Catalina), C/2012 K1 (PANSTARRS), C/2021 G2 (ATLAS), C/2022 E2 (ATLAS) and C/2022 N2 (PANSTARRS); and two famous disappointments, C/1973 E1 (Kohoutek) and C/2012 S1 (ISON), run through the same forecast rules (they are not among the 24 comets); with orbits from the JPL Small-Body Database (Hale–Bopp: NASA NSSDC). For these, the coma scale K (and H<sub>N</sub> where no nucleus size is known) is a placeholder to be fitted to photometry. “Your comet” takes any orbit from the JPL Small-Body Database or the MPC.
+Built-in comets: from the paper, C/2014 UN271 (Bernardinelli–Bernstein) with the photometry used there (Fig. S2b of the supplementary material), C/1995 O1 (Hale–Bopp) fitted before and after perihelion (Fig. S1b of the supplementary material; forecast of Fig. 4), 12P/Pons–Brooks with the forecast of Fig. S2a of the supplementary material, and C/2019 L3 (ATLAS) with CO and water ice on separate patches (Fig. S1c of the supplementary material); further, C/2024 T5 (ATLAS), C/2025 Y1 (ATLAS), 1P/Halley (return of 2061), 2P/Encke (2027), 29P/Schwassmann–Wachmann, 67P/Churyumov–Gerasimenko (2028), C/1996 B2 (Hyakutake), C/2020 F3 (NEOWISE), C/2023 A3 (Tsuchinshan–ATLAS) and the interstellar 3I/ATLAS; and the fifteen comets added to our forecast test, C/2014 Q2 (Lovejoy), C/2017 K2 (PANSTARRS), C/2017 T2 (PANSTARRS), C/2009 P1 (Garradd), C/2022 E3 (ZTF), C/2019 L3 (ATLAS), C/2011 L4 (PANSTARRS), C/2025 A6 (Lemmon), C/2015 V2 (Johnson), C/2020 V2 (ZTF), C/2013 US10 (Catalina), C/2012 K1 (PANSTARRS), C/2021 G2 (ATLAS), C/2022 E2 (ATLAS) and C/2022 N2 (PANSTARRS); and two famous disappointments, C/1973 E1 (Kohoutek) and C/2012 S1 (ISON), run through the same forecast rules (they are not among the 24 comets); with orbits from the JPL Small-Body Database (Hale–Bopp: NASA NSSDC). For these, the coma scale K (and H<sub>N</sub> where no nucleus size is known) is a placeholder to be fitted to photometry. “Your comet” takes any orbit from the JPL Small-Body Database or the MPC.
 
 ## Code (`code/`)
 
